@@ -32,6 +32,7 @@ option(OPT_BUILD_AUDIO_SINK "Build Audio Sink Module (Dependencies: rtaudio)" ON
 option(OPT_BUILD_PORTAUDIO_SINK "Build PortAudio Sink Module (Dependencies: portaudio)" OFF)
 option(OPT_BUILD_NETWORK_SINK "Build Audio Sink Module (no dependencies required)" ON)
 option(OPT_BUILD_NEW_PORTAUDIO_SINK "Build the new PortAudio Sink Module (Dependencies: portaudio)" OFF)
+option(OPT_BUILD_PIPEWIRE_SINK "Build the PipeWire Sink Module (Dependencies: pipewire)" OFF)
 
 # Decoders
 option(OPT_BUILD_FALCON9_DECODER "Build the falcon9 live decoder (Dependencies: ffplay)" OFF)
@@ -134,6 +135,9 @@ if (OPT_BUILD_NEW_PORTAUDIO_SINK)
 add_subdirectory("sink_modules/new_portaudio_sink")
 endif (OPT_BUILD_NEW_PORTAUDIO_SINK)
 
+if (OPT_BUILD_PIPEWIRE_SINK)
+    add_subdirectory("sink_modules/pipewire_sink")
+endif (OPT_BUILD_PIPEWIRE_SINK)
 
 # Decoders
 if (OPT_BUILD_FALCON9_DECODER)

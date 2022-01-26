@@ -220,6 +220,7 @@ int sdrpp_main(int argc, char* argv[]) {
 
     defConfig["moduleInstances"]["Audio Sink"] = "audio_sink";
     defConfig["moduleInstances"]["Network Sink"] = "network_sink";
+    defConfig["moduleInstances"]["PipeWire Sink"] = "pipewire_sink";
 
     defConfig["moduleInstances"]["Radio"] = "radio";
 
