@@ -147,7 +147,7 @@ private:
         gui::mainWindow.playButtonLocked = !connected;
 
         ImGui::GenericDialog("##sdrpp_srv_src_err_dialog", _this->serverBusy, GENERIC_DIALOG_BUTTONS_OK, [=](){
-            ImGui::Text("This server is already in use.");
+            ImGui::TextUnformatted("This server is already in use.");
         });
 
         if (connected) { style::beginDisabled(); }
@@ -194,11 +194,18 @@ private:
                 config.conf["servers"][_this->devConfName]["sampleType"] = _this->sampleTypeList.key(_this->sampleTypeId);
                 config.release(true);
             }
+            
+            if (ImGui::Checkbox("Compression", &_this->compression)) {
+                _this->client->setCompression(_this->compression);
 
-            bool dummy = false;
+                // Save config
+                config.acquire();
+                config.conf["servers"][_this->devConfName]["compression"] = _this->compression;
+                config.release(true);
+            }
+
+            bool dummy = true;
             style::beginDisabled();
-            ImGui::Checkbox("Compression", &dummy);
-            dummy = true;
             ImGui::Checkbox("Full IQ", &dummy);
             style::endDisabled();
 
@@ -210,7 +217,7 @@ private:
                 _this->client->bytes = 0;
             }
 
-            ImGui::Text("Status:");
+            ImGui::TextUnformatted("Status:");
             ImGui::SameLine();
             ImGui::TextColored(ImVec4(0.0f, 1.0f, 0.0f, 1.0f), "Connected (%.3f Mbit/s)", _this->datarate);
 
@@ -219,9 +226,9 @@ private:
             _this->client->showMenu();
         }
         else {
-            ImGui::Text("Status:");
+            ImGui::TextUnformatted("Status:");
             ImGui::SameLine();
-            ImGui::Text("Not connected (--.--- Mbit/s)");
+            ImGui::TextUnformatted("Not connected (--.--- Mbit/s)");
         }
     }
 
@@ -237,9 +244,13 @@ private:
             std::string key = config.conf["servers"][devConfName]["sampleType"];
             if (sampleTypeList.keyExists(key)) { sampleTypeId = sampleTypeList.keyId(key); }
         }
+        if (config.conf["servers"][devConfName].contains("compression")) {
+            compression = config.conf["servers"][devConfName]["compression"];
+        }
 
         // Set settings
         client->setSampleType(sampleTypeList[sampleTypeId]);
+        client->setCompression(compression);
     }
 
     std::string name;
@@ -261,6 +272,7 @@ private:
 
     OptionList<std::string, dsp::PCMType> sampleTypeList;
     int sampleTypeId;
+    bool compression = false;
 
     server::Client client;
 };

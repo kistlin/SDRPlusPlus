@@ -478,7 +478,7 @@ private:
         // Bookmark delete confirm dialog
         // List delete confirmation
         if (ImGui::GenericDialog(("freq_manager_del_list_confirm" + _this->name).c_str(), _this->deleteBookmarksOpen, GENERIC_DIALOG_BUTTONS_YES_NO, [_this]() {
-                ImGui::Text("Deleting selected bookmaks. Are you sure?");
+                ImGui::TextUnformatted("Deleting selected bookmaks. Are you sure?");
             }) == GENERIC_DIALOG_BUTTON_YES) {
             for (auto& _name : selectedNames) { _this->bookmarks.erase(_name); }
             _this->saveByName(_this->selectedListName);
@@ -738,7 +738,7 @@ private:
         }
 
         ImGui::BeginTooltip();
-        ImGui::Text(hoveredBookmarkName.c_str());
+        ImGui::TextUnformatted(hoveredBookmarkName.c_str());
         ImGui::Separator();
         ImGui::Text("List: %s", hoveredBookmark.listName.c_str());
         ImGui::Text("Frequency: %s", utils::formatFreq(hoveredBookmark.bookmark.frequency).c_str());

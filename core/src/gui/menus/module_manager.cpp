@@ -43,10 +43,10 @@ namespace module_manager_menu {
                 ImGui::TableNextRow();
 
                 ImGui::TableSetColumnIndex(0);
-                ImGui::Text(name.c_str());
+                ImGui::TextUnformatted(name.c_str());
 
                 ImGui::TableSetColumnIndex(1);
-                ImGui::Text(inst.module.info->name);
+                ImGui::TextUnformatted(inst.module.info->name);
 
                 ImGui::TableSetColumnIndex(2);
                 ImVec2 origPos = ImGui::GetCursorPos();
@@ -56,7 +56,7 @@ namespace module_manager_menu {
                     confirmOpened = true;
                 }
                 ImGui::SetCursorPos(ImVec2(origPos.x + 2, origPos.y - 5));
-                ImGui::Text("_");
+                ImGui::TextUnformatted("_");
             }
             ImGui::EndTable();
         }
@@ -69,7 +69,7 @@ namespace module_manager_menu {
         }
 
         ImGui::GenericDialog("module_mgr_error_", errorOpen, GENERIC_DIALOG_BUTTONS_OK, []() {
-            ImGui::Text(errorMessage.c_str());
+            ImGui::TextUnformatted(errorMessage.c_str());
         });
 
         // Add module row with slightly different settings

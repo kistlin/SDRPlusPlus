@@ -26,7 +26,12 @@ namespace server {
         s_cmd_hdr = (CommandHeader*)s_pkt_data;
         s_cmd_data = &sbuffer[sizeof(PacketHeader) + sizeof(CommandHeader)];
 
+        // Initialize decompressor
+        dctx = ZSTD_createDCtx();
+
         // Initialize DSP
+        decompIn.setBufferSize((sizeof(dsp::complex_t) * STREAM_BUFFER_SIZE) + 8);
+        decompIn.clearWriteStop();
         decomp.init(&decompIn);
         link.init(&decomp.out, output);
         decomp.start();
@@ -43,6 +48,7 @@ namespace server {
 
     ClientClass::~ClientClass() {
         close();
+        ZSTD_freeDCtx(dctx);
         delete[] rbuffer;
         delete[] sbuffer;
     }
@@ -108,6 +114,11 @@ namespace server {
         sendCommand(COMMAND_SET_SAMPLE_TYPE, 1);
     }
 
+    void ClientClass::setCompression(bool enabled) {
+         s_cmd_data[0] = enabled;
+        sendCommand(COMMAND_SET_COMPRESSION, 1);
+    }
+
     void ClientClass::start() {
         if (!client || !client->isOpen()) { return; }
         sendCommand(COMMAND_START, 0);
@@ -123,7 +134,9 @@ namespace server {
     void ClientClass::close() {
         decomp.stop();
         link.stop();
+        decompIn.stopWriter();
         client->close();
+        decompIn.clearWriteStop();
     }
 
     bool ClientClass::isOpen() {
@@ -188,6 +201,10 @@ namespace server {
         else if (_this->r_pkt_hdr->type == PACKET_TYPE_BASEBAND) {
             memcpy(_this->decompIn.writeBuf, &buf[sizeof(PacketHeader)], _this->r_pkt_hdr->size - sizeof(PacketHeader));
             _this->decompIn.swap(_this->r_pkt_hdr->size - sizeof(PacketHeader));
+        }
+        else if (_this->r_pkt_hdr->type == PACKET_TYPE_BASEBAND_COMPRESSED) {
+            size_t outCount = ZSTD_decompressDCtx(_this->dctx, _this->decompIn.writeBuf, STREAM_BUFFER_SIZE, _this->r_pkt_data, _this->r_pkt_hdr->size - sizeof(PacketHeader));
+            if (outCount) { _this->decompIn.swap(outCount); };
         }
         else if (_this->r_pkt_hdr->type == PACKET_TYPE_ERROR) {
             spdlog::error("SDR++ Server Error: {0}", buf[sizeof(PacketHeader)]);
