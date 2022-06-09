@@ -34,7 +34,7 @@ public:
     RadioModule(std::string name) {
         this->name = name;
 
-        // Intialize option lists
+        // Initialize option lists
         deempModes.define("None", DEEMP_MODE_NONE);
         deempModes.define("22us", DEEMP_MODE_22US);
         deempModes.define("50us", DEEMP_MODE_50US);
@@ -204,7 +204,7 @@ private:
 
         if (!_this->enabled) { style::beginDisabled(); }
 
-        float menuWidth = ImGui::GetContentRegionAvailWidth();
+        float menuWidth = ImGui::GetContentRegionAvail().x;
         ImGui::BeginGroup();
 
         ImGui::Columns(4, CONCAT("RadioModeColumns##_", _this->name), false);
@@ -456,7 +456,7 @@ private:
             setDeemphasisMode(deempModes[deempId]);
         }
         else {
-            // Disable everyting if post processing is disabled
+            // Disable everything if post processing is disabled
             afChain.disableAll();
         }
 

@@ -8,7 +8,7 @@ SDR++ is a cross-platform and open source SDR software with the aim of being blo
 * [Patreon](https://patreon.com/ryzerth)
 * [Discord Server](https://discord.gg/aFgWjyD)
 * [Reddit](https://www.reddit.com/r/sdrpp/)
-* IRC: `#sdrpp` ([libera.chat](https://libera.chat))
+* IRC: `#sdrpp` ([libera.chat](https://libera.chat)) __**NO LONGER ACTIVE, JOIN DISCORD INSTEAD**__
 
 ## Features
 
@@ -411,15 +411,21 @@ I will soon publish a contributing.md listing the code style to use.
 * Eric Johnson
 * Ernest Murphy (NH7L)
 * Flinger Films
+* gringogrigio
+* Joe Cupano
 * Kezza
+* Krys Kamieniecki
 * Lee Donaghy
+* Lee KD1SQ
 * .lozenge. (Hank Hill)
 * ON4MU
 * [Passion-Radio.com](https://passion-radio.com/)
+* Paul Maine
 * [Scanner School](https://scannerschool.com/)
 * [SignalsEverywhere](https://signalseverywhere.com/)
 * Syne Ardwin (WI9SYN)
 * [W4IPA](https://twitter.com/W4IPAstroke5)
+* [Zipper](github.com/reppiZ)
 
 ## Contributors
 
@@ -444,6 +450,7 @@ I will soon publish a contributing.md listing the code style to use.
 * [Szymon Zakrent](https://github.com/zakrent)
 * [Tobias Mädel](https://github.com/Manawyrm)
 * [Zimm](https://github.com/invader-zimm)
+
 
 ## Libraries used
 
