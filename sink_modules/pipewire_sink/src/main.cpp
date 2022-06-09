@@ -3,11 +3,12 @@
 #include <gui/gui.h>
 #include <signal_path/signal_path.h>
 #include <signal_path/sink.h>
+#include "core.h"
+#include "json.hpp"
 #include <dsp/audio.h>
 #include <dsp/processing.h>
 #include <spdlog/spdlog.h>
 #include <config.h>
-#include <options.h>
 
 #include <spa-0.2/spa/param/audio/format-utils.h>
 #include <spa-0.2/spa/param/param.h>
@@ -297,7 +298,7 @@ private:
 
 MOD_EXPORT void _INIT_() {
     json def = json({});
-    config.setPath(options::opts.root + "/pipewire_sink_config.json");
+    config.setPath(core::args["root"].s() + "/pipewire_sink_config.json");
     config.load(def);
     config.enableAutoSave();
 }

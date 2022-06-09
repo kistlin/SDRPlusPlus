@@ -17,5 +17,11 @@ else ()
     target_compile_options(radio PRIVATE -O3 -std=c++17)
 endif ()
 
+if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+            COMMENT "Copy $<TARGET_FILE_NAME:${PROJECT_NAME}> to $<TARGET_FILE_DIR:sdrpp>/modules"
+            COMMAND ${CMAKE_COMMAND} -E copy "$<TARGET_FILE:${PROJECT_NAME}>" $<TARGET_FILE_DIR:sdrpp>/modules/$<TARGET_FILE_NAME:${PROJECT_NAME}>)
+endif ()
+
 # Install directives
 install(TARGETS radio DESTINATION lib/sdrpp/plugins)

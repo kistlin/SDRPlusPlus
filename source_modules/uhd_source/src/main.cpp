@@ -9,7 +9,6 @@
 #include "gui/style.h"
 #include "json.hpp"
 #include "module.h"
-#include "options.h"
 #include "signal_path/source.h"
 #include "signal_path/signal_path.h"
 
@@ -110,7 +109,7 @@ private:
     // SourceHandler
     static void menuHandler(void* ctx) {
         UHDSourceModule* _this = (UHDSourceModule*)ctx;
-        const float menuWidth = ImGui::GetContentRegionAvailWidth();
+        const float menuWidth = ImGui::GetContentRegionAvail().x;
         const std::string concatenatedDeviceList = _this->getDeviceListString();
 
         if (_this->receiving) { style::beginDisabled(); }
@@ -425,7 +424,7 @@ MOD_EXPORT void _INIT_() {
     json def = json({});
     def[UHDSourceModule::DEVICE_FIELD] = "";
     def[UHDSourceModule::DEVICES_FIELD] = json({});
-    config.setPath(options::opts.root + "/uhd_config.json");
+    config.setPath(core::args["root"].s() + "/uhd_config.json");
     config.load(def);
     config.enableAutoSave();
 }
