@@ -27,7 +27,9 @@ if (MSVC)
 else (MSVC)
     find_package(PkgConfig)
 
-    pkg_check_modules(LIBAIRSPYHF REQUIRED libairspyhf)
+    if (OPT_BUILD_AIRSPYHF_SOURCE)
+        pkg_check_modules(LIBAIRSPYHF REQUIRED libairspyhf)
+    endif()
 
     target_include_directories(airspyhf_source PRIVATE ${LIBAIRSPYHF_INCLUDE_DIRS})
     target_link_directories(airspyhf_source PRIVATE ${LIBAIRSPYHF_LIBRARY_DIRS})

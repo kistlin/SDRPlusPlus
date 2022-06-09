@@ -30,6 +30,7 @@ ModuleManager::Module_t ModuleManager::loadModule(std::string path) {
     mod.handle = dlopen(path.c_str(), RTLD_LAZY | RTLD_LOCAL);
     if (mod.handle == NULL) {
         spdlog::error("Couldn't load {0}.", path);
+        spdlog::error("dlopen failed because of: {0}", dlerror());
         mod.handle = NULL;
         return mod;
     }

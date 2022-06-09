@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.13)
 project(pipewire_sink)
 
 if (MSVC)
-    message(FATAL_ERROR "PipeWire is not supported on Windows.")
+    message(FATAL_ERROR "PipeWire is not supported on Windows. (use -DOPT_BUILD_PIPEWIRE_SINK=OFF)")
 endif ()
 
 set(SOURCES
