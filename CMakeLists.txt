@@ -31,7 +31,6 @@ option(OPT_BUILD_BLADERF_SOURCE "Build BladeRF Source Module (Dependencies: libb
 option(OPT_BUILD_FILE_SOURCE "Wav file source" ON)
 option(OPT_BUILD_HACKRF_SOURCE "Build HackRF Source Module (Dependencies: libhackrf)" ON)
 option(OPT_BUILD_LIMESDR_SOURCE "Build LimeSDR Source Module (Dependencies: liblimesuite)" OFF)
-option(OPT_BUILD_SDDC_SOURCE "Build SDDC Source Module (Dependencies: libusb-1.0)" OFF)
 option(OPT_BUILD_SDRPP_SERVER_SOURCE "Build SDR++ Server Source Module (no dependencies required)" ON)
 option(OPT_BUILD_RFSPACE_SOURCE "Build RFspace Source Module (no dependencies required)" ON)
 option(OPT_BUILD_RTL_SDR_SOURCE "Build RTL-SDR Source Module (Dependencies: librtlsdr)" ON)
@@ -53,7 +52,7 @@ option(OPT_BUILD_PIPEWIRE_SINK "Build the PipeWire Sink Module (Dependencies: pi
 # Decoders
 option(OPT_BUILD_FALCON9_DECODER "Build the falcon9 live decoder (Dependencies: ffplay)" OFF)
 option(OPT_BUILD_KG_SSTV_DECODER "Build the M17 decoder module (no dependencies required)" OFF)
-option(OPT_BUILD_M17_DECODER "Build the M17 decoder module (no dependencies required)" OFF)
+option(OPT_BUILD_M17_DECODER "Build the M17 decoder module (Dependencies: codec2)" OFF)
 option(OPT_BUILD_METEOR_DEMODULATOR "Build the meteor demodulator module (no dependencies required)" ON)
 option(OPT_BUILD_RADIO "Main audio modulation decoder (AM, FM, SSB, etc...)" ON)
 option(OPT_BUILD_WEATHER_SAT_DECODER "Build the HRPT decoder module (no dependencies required)" OFF)
@@ -97,10 +96,6 @@ endif (OPT_BUILD_HACKRF_SOURCE)
 if (OPT_BUILD_LIMESDR_SOURCE)
 add_subdirectory("source_modules/limesdr_source")
 endif (OPT_BUILD_LIMESDR_SOURCE)
-
-if (OPT_BUILD_SDDC_SOURCE)
-add_subdirectory("source_modules/sddc_source")
-endif (OPT_BUILD_SDDC_SOURCE)
 
 if (OPT_BUILD_SDRPP_SERVER_SOURCE)
 add_subdirectory("source_modules/sdrpp_server_source")
