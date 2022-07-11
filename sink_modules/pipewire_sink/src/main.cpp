@@ -5,8 +5,8 @@
 #include <signal_path/sink.h>
 #include "core.h"
 #include "json.hpp"
-#include <dsp/audio.h>
-#include <dsp/processing.h>
+#include <dsp/buffer/packer.h>
+#include <dsp/convert/stereo_to_mono.h>
 #include <spdlog/spdlog.h>
 #include <config.h>
 
@@ -242,9 +242,9 @@ private:
     struct spa_pod_builder spaPodBuilder = {};
     SinkManager::Stream* _stream = nullptr;
     EventHandler<bool> playStateHandler;
-    dsp::StereoToMono s2m;
-    dsp::Packer<float> monoPacker;
-    dsp::Packer<dsp::stereo_t> stereoPacker;
+    dsp::convert::StereoToMono s2m;
+    dsp::buffer::Packer<float> monoPacker;
+    dsp::buffer::Packer<dsp::stereo_t> stereoPacker;
     std::string _streamName;
 };
 
