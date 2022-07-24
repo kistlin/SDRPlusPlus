@@ -1,40 +1,41 @@
 #pragma once
-#include "quadrature.h"
-#include "../taps/root_raised_cosine.h"
-#include "../filter/fir.h"
-#include "../clock_recovery/mm.h"
+#include <dsp/taps/root_raised_cosine.h>
+#include <dsp/filter/fir.h>
+#include <dsp/loop/fast_agc.h>
+#include "meteor_costas.h"
+#include <dsp/clock_recovery/mm.h>
 
 namespace dsp::demod {
-    // Note: I don't like how this demodulator reuses 90% of the code from the PSK demod. Same will be for the PM demod...
-    class GMSK : public Processor<complex_t, float> {
-        using base_type = Processor<complex_t, float>;
+    class Meteor : public Processor<complex_t, complex_t> {
+        using base_type = Processor<complex_t, complex_t>;
     public:
-        GMSK() {}
+        Meteor() {}
 
-        GMSK(stream<complex_t>* in, double symbolrate, double samplerate, double deviation, int rrcTapCount, double rrcBeta, double omegaGain, double muGain, double omegaRelLimit = 0.01) {
-            init(in, symbolrate, samplerate, deviation, rrcTapCount, rrcBeta, omegaGain, muGain);
+        Meteor(stream<complex_t>* in, double symbolrate, double samplerate, int rrcTapCount, double rrcBeta, double agcRate, double costasBandwidth, bool brokenModulation, double omegaGain, double muGain, double omegaRelLimit = 0.01) {
+            init(in, symbolrate, samplerate, rrcTapCount, rrcBeta, agcRate, costasBandwidth, brokenModulation, omegaGain, muGain);
         }
 
-        ~GMSK() {
+        ~Meteor() {
             if (!base_type::_block_init) { return; }
             base_type::stop();
             taps::free(rrcTaps);
         }
 
-        void init(stream<complex_t>* in, double symbolrate, double samplerate, double deviation, int rrcTapCount, double rrcBeta, double omegaGain, double muGain, double omegaRelLimit = 0.01) {
+        void init(stream<complex_t>* in, double symbolrate, double samplerate, int rrcTapCount, double rrcBeta, double agcRate, double costasBandwidth, bool brokenModulation, double omegaGain, double muGain, double omegaRelLimit = 0.01) {
             _symbolrate = symbolrate;
             _samplerate = samplerate;
-            _deviation = deviation;
             _rrcTapCount = rrcTapCount;
             _rrcBeta = rrcBeta;
             
-            demod.init(NULL, _deviation, _samplerate);
             rrcTaps = taps::rootRaisedCosine<float>(_rrcTapCount, _rrcBeta, _symbolrate, _samplerate);
             rrc.init(NULL, rrcTaps);
+            agc.init(NULL, 1.0, 10e6, agcRate);
+            costas.init(NULL, costasBandwidth, brokenModulation);
             recov.init(NULL, _samplerate / _symbolrate,  omegaGain, muGain, omegaRelLimit);
 
-            demod.out.free();
             rrc.out.free();
+            agc.out.free();
+            costas.out.free();
             recov.out.free();
 
             base_type::init(in);
@@ -57,19 +58,11 @@ namespace dsp::demod {
             std::lock_guard<std::recursive_mutex> lck(base_type::ctrlMtx);
             base_type::tempStop();
             _samplerate = samplerate;
-            demod.setDeviation(_deviation, _samplerate);
             taps::free(rrcTaps);
             rrcTaps = taps::rootRaisedCosine<float>(_rrcTapCount, _rrcBeta, _symbolrate, _samplerate);
             rrc.setTaps(rrcTaps);
             recov.setOmega(_samplerate / _symbolrate);
             base_type::tempStart();
-        }
-
-        void setDeviation(double deviation) {
-            assert(base_type::_block_init);
-            std::lock_guard<std::recursive_mutex> lck(base_type::ctrlMtx);
-            _deviation = deviation;
-            demod.setDeviation(_deviation, _samplerate);
         }
 
         void setRRCParams(int rrcTapCount, double rrcBeta) {
@@ -80,6 +73,7 @@ namespace dsp::demod {
             _rrcBeta = rrcBeta;
             taps::free(rrcTaps);
             rrcTaps = taps::rootRaisedCosine<float>(_rrcTapCount, _rrcBeta, _symbolrate, _samplerate);
+            rrc.setTaps(rrcTaps);
             base_type::tempStart();
         }
 
@@ -89,6 +83,18 @@ namespace dsp::demod {
 
         void setRRCBeta(int rrcBeta) {
             setRRCParams(_rrcTapCount, rrcBeta);
+        }
+
+        void setAGCRate(double agcRate) {
+            assert(base_type::_block_init);
+            std::lock_guard<std::recursive_mutex> lck(base_type::ctrlMtx);
+            agc.setRate(agcRate);
+        }
+
+        void setCostasBandwidth(double bandwidth) {
+            assert(base_type::_block_init);
+            std::lock_guard<std::recursive_mutex> lck(base_type::ctrlMtx);
+            costas.setBandwidth(bandwidth);
         }
 
         void setMMParams(double omegaGain, double muGain, double omegaRelLimit = 0.01) {
@@ -117,19 +123,27 @@ namespace dsp::demod {
             recov.setOmegaRelLimit(omegaRelLimit);
         }
 
+        void setBrokenModulation(bool enabled) {
+            assert(base_type::_block_init);
+            std::lock_guard<std::recursive_mutex> lck(base_type::ctrlMtx);
+            costas.setBrokenModulation(enabled);
+        }
+
         void reset() {
             assert(base_type::_block_init);
             std::lock_guard<std::recursive_mutex> lck(base_type::ctrlMtx);
             base_type::tempStop();
-            demod.reset();
             rrc.reset();
+            agc.reset();
+            costas.reset();
             recov.reset();
             base_type::tempStart();
         }
 
-        inline int process(int count, complex_t* in, float* out) {
-            demod.process(count, in, out);
-            rrc.process(count, out, out);
+        inline int process(int count, const complex_t* in, complex_t* out) {
+            rrc.process(count, in, out);
+            agc.process(count, out, out);
+            costas.process(count, out, out);
             return recov.process(count, out, out);
         }
 
@@ -150,13 +164,13 @@ namespace dsp::demod {
     protected:
         double _symbolrate;
         double _samplerate;
-        double _deviation;
         int _rrcTapCount;
         double _rrcBeta;
 
-        Quadrature demod;
         tap<float> rrcTaps;
-        filter::FIR<float, float> rrc;
-        clock_recovery::MM<float> recov;
+        filter::FIR<complex_t, float> rrc;
+        loop::FastAGC<complex_t> agc;
+        loop::MeteorCostas costas;
+        clock_recovery::MM<complex_t> recov;
     };
 }
