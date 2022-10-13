@@ -69,6 +69,16 @@ namespace dsp::multirate {
             base_type::tempStart();
         }
 
+        void setRates(double inSamplerate, double outSamplerate) {
+            assert(base_type::_block_init);
+            std::lock_guard<std::recursive_mutex> lck(base_type::ctrlMtx);
+            base_type::tempStop();
+            _inSamplerate = inSamplerate;
+            _outSamplerate = outSamplerate;
+            reconfigure();
+            base_type::tempStart();
+        }
+
         inline int process(int count, const T* in, T* out) {
             switch(mode) {
                 case Mode::BOTH:
@@ -131,7 +141,7 @@ namespace dsp::multirate {
             double actualOutSR = (double)IntSR * (double)interp / (double)decim;
             double error = abs((actualOutSR - _outSamplerate) / _outSamplerate) * 100.0;
             if (error > 0.01) {
-                fprintf(stderr, "Warning: resampling error is over 0.01%: %lf\n", error);
+                fprintf(stderr, "Warning: resampling error is over 0.01%%: %lf\n", error);
             }
             
             // If the power decimator already did all the work, don't use the resampler

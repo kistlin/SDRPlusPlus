@@ -121,9 +121,14 @@ public:
 #ifndef __ANDROID__
         devCount = rtlsdr_get_device_count();
         char buf[1024];
+        char snBuf[1024];
         for (int i = 0; i < devCount; i++) {
+            // Gather device info
             const char* devName = rtlsdr_get_device_name(i);
-            sprintf(buf, "%s [%d]", devName, i);
+            int snErr = rtlsdr_get_device_usb_strings(i, NULL, NULL, snBuf);
+
+            // Build name
+            sprintf(buf, "[%s] %s##%d", (!snErr && snBuf[0]) ? snBuf : "No Serial", devName, i);
             devNames.push_back(buf);
             devListTxt += buf;
             devListTxt += '\0';
@@ -166,7 +171,7 @@ public:
 #ifndef __ANDROID__
         int oret = rtlsdr_open(&openDev, id);
 #else
-        int oret = rtlsdr_open(&openDev, devFd);
+        int oret = rtlsdr_open_fd(&openDev, devFd);
 #endif
         
         if (oret < 0) {
@@ -280,7 +285,7 @@ private:
 #ifndef __ANDROID__
         int oret = rtlsdr_open(&_this->openDev, _this->devId);
 #else
-        int oret = rtlsdr_open(&_this->openDev, _this->devFd);
+        int oret = rtlsdr_open_fd(&_this->openDev, _this->devFd);
 #endif
 
         if (oret < 0) {
