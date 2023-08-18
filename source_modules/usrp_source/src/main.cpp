@@ -1,4 +1,4 @@
-#include <spdlog/spdlog.h>
+#include <utils/flog.h>
 #include <module.h>
 #include <gui/gui.h>
 #include <signal_path/signal_path.h>
@@ -136,14 +136,10 @@ public:
         // List samplerates
         samplerates.clear();
         auto srList = dev->get_rx_rates(chanId);
-        for (auto& l : srList) {
-            if (l.step() == 0.0 || l.start() == l.stop()) {
-                samplerates.define(l.start(), getBandwdithScaled(l.start()), l.start());
-            }
-            else {
-                for (double f = l.start(); f <= l.stop(); f += l.step()) {
-                    samplerates.define(f, getBandwdithScaled(f), f);
-                }
+        for (const auto& l : srList) {
+            double step = (l.step() == 0.0) ? 100e3 : l.step();
+            for (double f = l.start(); f <= l.stop(); f += step) {
+                samplerates.define(f, getBandwdithScaled(f), f);
             }
         }
 
@@ -157,9 +153,31 @@ public:
         // Get gain range
         gainRange = dev->get_rx_gain_range(chanId)[0];
 
+        // Get bandwidth ranges
+        bandwidths.clear();
+        bandwidths.define(0, "Auto", 0);
+        uhd::meta_range_t bwRange = dev->get_rx_bandwidth_range(chanId);
+        for (const auto& r : bwRange) {
+            double step = (r.step() == 0.0) ? 100e3 : r.step();
+            for (double i = r.start(); i <= r.stop(); i += step) {
+                bandwidths.define((int)i, getBandwdithScaled(i), i);
+            }
+        }
+
+        // Get clock sources
+        clockSources.clear();
+        auto cSources = dev->get_clock_sources(0);
+        for (const auto& s : cSources) {
+            std::string name = s;
+            name[0] = std::toupper(name[0]);
+            clockSources.define(s, name, s);
+        }
+        
         // Load settings
         srId = 0;
         antId = 0;
+        bwId = 0;
+        csId = 0;
         gain = gainRange.start();
         config.acquire();
         if (config.conf["devices"][selectedSer].contains("channels") && config.conf["devices"][selectedSer]["channels"].contains(selectedChan)) {
@@ -172,6 +190,14 @@ public:
                 std::string ant = cconf["antenna"];
                 if (antennas.keyExists(ant)) { antId = antennas.keyId(ant); }
             }
+            if (cconf.contains("bandwidth")) {
+                int bw = cconf["bandwidth"];
+                if (bandwidths.keyExists(bw)) { bwId = bandwidths.keyId(bw); }
+            }
+            if (cconf.contains("clock")) {
+                std::string clk = cconf["clock"];
+                if (clockSources.keyExists(clk)) { csId = clockSources.keyId(clk); }
+            }
             if (cconf.contains("gain")) {
                 gain = cconf["gain"];
                 gain = std::clamp<float>(gain, gainRange.start(), gainRange.stop());
@@ -182,6 +208,24 @@ public:
         // Apply samplerate
         sampleRate = samplerates.key(srId);
         core::setInputSampleRate(sampleRate);
+    }
+
+    void setBandwidth(double bw) {
+        if (bw > 0.0) {
+            dev->set_rx_bandwidth(bw, chanId);
+            return;
+        }
+
+        // If on auto, select the best depending on the samplerate
+        // Note: Starts at 1 because 0 is the 'Auto' entry.
+        int bestId;
+        for (int i = 1; i < bandwidths.size(); i++) {
+            bestId = i;
+            if (bandwidths[i] >= sampleRate) { break; }
+        }
+
+        // Set it
+        dev->set_rx_bandwidth(bandwidths[bestId], chanId);
     }
 
 private:
@@ -216,12 +260,12 @@ private:
         }
 
         core::setInputSampleRate(_this->sampleRate);
-        spdlog::info("USRPSourceModule '{0}': Menu Select!", _this->name);
+        flog::info("USRPSourceModule '{0}': Menu Select!", _this->name);
     }
 
     static void menuDeselected(void* ctx) {
         USRPSourceModule* _this = (USRPSourceModule*)ctx;
-        spdlog::info("USRPSourceModule '{0}': Menu Deselect!", _this->name);
+        flog::info("USRPSourceModule '{0}': Menu Deselect!", _this->name);
     }
 
     static void start(void* ctx) {
@@ -235,6 +279,8 @@ private:
         _this->dev->set_rx_antenna(_this->antennas.key(_this->antId), _this->chanId);
         _this->dev->set_rx_gain(_this->gain, _this->chanId);
         _this->dev->set_rx_freq(_this->freq, _this->chanId);
+        _this->dev->set_clock_source(_this->clockSources.key(_this->csId));
+        _this->setBandwidth(_this->bandwidths[_this->bwId]);
         
         uhd::stream_args_t sargs;
         sargs.channels.clear();
@@ -248,7 +294,7 @@ private:
         _this->workerThread = std::thread(&USRPSourceModule::worker, _this);
 
         _this->running = true;
-        spdlog::info("USRPSourceModule '{0}': Start!", _this->name);
+        flog::info("USRPSourceModule '{0}': Start!", _this->name);
     }
 
     static void stop(void* ctx) {
@@ -264,7 +310,7 @@ private:
         _this->streamer.reset();
         _this->dev.reset();
 
-        spdlog::info("USRPSourceModule '{0}': Stop!", _this->name);
+        flog::info("USRPSourceModule '{0}': Stop!", _this->name);
     }
 
     static void tune(double freq, void* ctx) {
@@ -273,7 +319,7 @@ private:
             _this->dev->set_rx_freq(freq, _this->chanId);
         }
         _this->freq = freq;
-        spdlog::info("USRPSourceModule '{0}': Tune: {1}!", _this->name, freq);
+        flog::info("USRPSourceModule '{0}': Tune: {1}!", _this->name, freq);
     }
 
     static void menuHandler(void* ctx) {
@@ -344,6 +390,36 @@ private:
             }
         }
 
+        if (_this->bandwidths.size() > 2) {
+            SmGui::LeftLabel("Bandwidth");
+            SmGui::FillWidth();
+            if (SmGui::Combo(CONCAT("##_usrp_bw_sel_", _this->name), &_this->bwId, _this->bandwidths.txt)) {
+                if (_this->running) {
+                    _this->setBandwidth(_this->bandwidths[_this->bwId]);
+                }
+                if (!_this->selectedSer.empty() && !_this->selectedChan.empty()) {
+                    config.acquire();
+                    config.conf["devices"][_this->selectedSer]["channels"][_this->selectedChan]["bandwidth"] = _this->bandwidths.key(_this->bwId);
+                    config.release(true);
+                }
+            }
+        }
+
+        if (_this->clockSources.size() > 1) {
+            SmGui::LeftLabel("Clock");
+            SmGui::FillWidth();
+            if (SmGui::Combo(CONCAT("##_usrp_clk_sel_", _this->name), &_this->csId, _this->clockSources.txt)) {
+                if (_this->running) {
+                    _this->dev->set_clock_source(_this->clockSources.key(_this->csId));
+                }
+                if (!_this->selectedSer.empty()) {
+                    config.acquire();
+                    config.conf["devices"][_this->selectedSer]["channels"][_this->selectedChan]["clock"] = _this->clockSources.key(_this->csId);
+                    config.release(true);
+                }
+            }
+        }
+
         SmGui::LeftLabel("Gain");
         SmGui::FillWidth();
         if (SmGui::SliderFloatWithSteps(CONCAT("##_usrp_gain_", _this->name), &_this->gain, _this->gainRange.start(), _this->gainRange.stop(), _this->gainRange.step(), SmGui::FMT_STR_FLOAT_DB_ONE_DECIMAL)) {
@@ -396,6 +472,8 @@ private:
     int chanId = 0;
     int srId = 0;
     int antId = 0;
+    int bwId = 0;
+    int csId = 0;
     std::string selectedSer = "";
     std::string selectedChan = "";
     float gain = 0.0f;
@@ -404,6 +482,8 @@ private:
     OptionList<std::string, std::string> channels;
     OptionList<int, double> samplerates;
     OptionList<std::string, std::string> antennas;
+    OptionList<int, double> bandwidths;
+    OptionList<std::string, std::string> clockSources;
     uhd::range_t gainRange;
 
     uhd::usrp::multi_usrp::sptr dev;

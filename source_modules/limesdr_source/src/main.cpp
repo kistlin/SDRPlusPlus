@@ -1,4 +1,4 @@
-#include <spdlog/spdlog.h>
+#include <utils/flog.h>
 #include <module.h>
 #include <gui/gui.h>
 #include <signal_path/signal_path.h>
@@ -298,7 +298,7 @@ private:
     int getBestBandwidth(int sampleRate) {
         for (int i = 0; i < bandwidths.size(); i++) {
             if (bandwidths[i] >= sampleRate) {
-                spdlog::warn("Selected bandwidth is {0}", bandwidths[i]);
+                flog::warn("Selected bandwidth is {0}", bandwidths[i]);
                 return bandwidths[i];
             }
         }
@@ -308,17 +308,18 @@ private:
     static void menuSelected(void* ctx) {
         LimeSDRSourceModule* _this = (LimeSDRSourceModule*)ctx;
         core::setInputSampleRate(_this->sampleRate);
-        spdlog::info("LimeSDRSourceModule '{0}': Menu Select!", _this->name);
+        flog::info("LimeSDRSourceModule '{0}': Menu Select!", _this->name);
     }
 
     static void menuDeselected(void* ctx) {
         LimeSDRSourceModule* _this = (LimeSDRSourceModule*)ctx;
-        spdlog::info("LimeSDRSourceModule '{0}': Menu Deselect!", _this->name);
+        flog::info("LimeSDRSourceModule '{0}': Menu Deselect!", _this->name);
     }
 
     static void start(void* ctx) {
         LimeSDRSourceModule* _this = (LimeSDRSourceModule*)ctx;
         if (_this->running) { return; }
+        if (_this->selectedDevName.empty()) { return; }
 
         // Open device
         _this->openDev = NULL;
@@ -329,10 +330,13 @@ private:
         if (err) {
             LMS_Close(_this->openDev);
             LMS_Open(&_this->openDev, _this->devList[_this->devId], NULL);
-            LMS_Init(_this->openDev);
+            if (err = LMS_Init(_this->openDev)) {
+                flog::error("Failed to re-initialize device ({})", err);
+                return;
+            }
         }
 
-        spdlog::warn("Channel count: {0}", LMS_GetNumChannels(_this->openDev, false));
+        flog::warn("Channel count: {0}", LMS_GetNumChannels(_this->openDev, false));
 
         // Set options
         LMS_EnableChannel(_this->openDev, false, _this->chanId, true);
@@ -359,7 +363,7 @@ private:
 
 
         _this->running = true;
-        spdlog::info("LimeSDRSourceModule '{0}': Start!", _this->name);
+        flog::info("LimeSDRSourceModule '{0}': Start!", _this->name);
     }
 
     static void stop(void* ctx) {
@@ -376,7 +380,7 @@ private:
 
         LMS_Close(_this->openDev);
 
-        spdlog::info("LimeSDRSourceModule '{0}': Stop!", _this->name);
+        flog::info("LimeSDRSourceModule '{0}': Stop!", _this->name);
     }
 
     static void tune(double freq, void* ctx) {
@@ -385,7 +389,7 @@ private:
         if (_this->running) {
             LMS_SetLOFrequency(_this->openDev, false, _this->chanId, freq);
         }
-        spdlog::info("LimeSDRSourceModule '{0}': Tune: {1}!", _this->name, freq);
+        flog::info("LimeSDRSourceModule '{0}': Tune: {1}!", _this->name, freq);
     }
 
     static void menuHandler(void* ctx) {

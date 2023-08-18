@@ -52,7 +52,9 @@ If `libvolk2-dev` is not available, use `libvolk1-dev`.
 
 ### Arch-based
 
-Install the latest release from the [sdrpp-git](https://aur.archlinux.org/packages/sdrpp-git/) AUR package
+Install from source following the instructions below.
+
+**WARNING: The sdrpp-git AUR package is no longer official, it is not recommended to use it.**
 
 ### Other
 
@@ -302,7 +304,7 @@ Here is an example of build commands that will build almost all modules at the t
 ```sh
 mkdir build
 cd build
-cmake .. -DOPT_BUILD_SOAPY_SOURCE=OFF -DOPT_BUILD_BLADERF_SOURCE=ON -DOPT_BUILD_AUDIO_SINK=OFF -DOPT_BUILD_PORTAUDIO_SINK=ON -DOPT_BUILD_NEW_PORTAUDIO_SINK=ON -DOPT_BUILD_M17_DECODER=ON -DUSE_BUNDLE_DEFAULTS=ON -DCMAKE_BUILD_TYPE=Release
+cmake .. -DOPT_BUILD_SOAPY_SOURCE=OFF -DOPT_BUILD_BLADERF_SOURCE=ON -DOPT_BUILD_AUDIO_SOURCE=OFF -DOPT_BUILD_AUDIO_SINK=OFF -DOPT_BUILD_PORTAUDIO_SINK=ON -DOPT_BUILD_NEW_PORTAUDIO_SINK=ON -DOPT_BUILD_M17_DECODER=ON -DUSE_BUNDLE_DEFAULTS=ON -DCMAKE_BUILD_TYPE=Release
 make -j<N>
 ```
 
@@ -327,11 +329,12 @@ Modules in beta are still included in releases for the most part but not enabled
 |----------------------|------------|-------------------|--------------------------------|:---------------:|:-----------------------:|:---------------------------:|
 | airspy_source        | Working    | libairspy         | OPT_BUILD_AIRSPY_SOURCE        | ✅              | ✅                     | ✅                         |
 | airspyhf_source      | Working    | libairspyhf       | OPT_BUILD_AIRSPYHF_SOURCE      | ✅              | ✅                     | ✅                         |
-| bladerf_source       | Working    | libbladeRF        | OPT_BUILD_BLADERF_SOURCE       | ⛔              | ⚠️ (not Debian Buster) | ✅                         |
+| bladerf_source       | Working    | libbladeRF        | OPT_BUILD_BLADERF_SOURCE       | ⛔              | ✅ (not Debian Buster) | ✅                         |
 | file_source          | Working    | -                 | OPT_BUILD_FILE_SOURCE          | ✅              | ✅                     | ✅                         |
 | hackrf_source        | Working    | libhackrf         | OPT_BUILD_HACKRF_SOURCE        | ✅              | ✅                     | ✅                         |
-| hermes_source        | Beta       | -                 | OPT_BUILD_HERMES_SOURCE        | ✅              | ✅                     | ⛔                         |
+| hermes_source        | Beta       | -                 | OPT_BUILD_HERMES_SOURCE        | ✅              | ✅                     | ✅                         |
 | limesdr_source       | Working    | liblimesuite      | OPT_BUILD_LIMESDR_SOURCE       | ⛔              | ✅                     | ✅                         |
+| perseus_source       | Beta       | libperseus-sdr    | OPT_BUILD_PERSEUS_SOURCE       | ⛔              | ⛔                     | ⛔                         |
 | plutosdr_source      | Working    | libiio, libad9361 | OPT_BUILD_PLUTOSDR_SOURCE      | ✅              | ✅                     | ✅                         |
 | rfspace_source       | Working    | -                 | OPT_BUILD_RFSPACE_SOURCE       | ✅              | ✅                     | ✅                         |
 | rtl_sdr_source       | Working    | librtlsdr         | OPT_BUILD_RTL_SDR_SOURCE       | ✅              | ✅                     | ✅                         |
@@ -339,6 +342,7 @@ Modules in beta are still included in releases for the most part but not enabled
 | sdrplay_source       | Working    | SDRplay API       | OPT_BUILD_SDRPLAY_SOURCE       | ⛔              | ✅                     | ✅                         |
 | sdrpp_server_source  | Working    | -                 | OPT_BUILD_SDRPP_SERVER_SOURCE  | ✅              | ✅                     | ✅                         |
 | soapy_source         | Working    | soapysdr          | OPT_BUILD_SOAPY_SOURCE         | ✅              | ✅                     | ✅                         |
+| spectran_source      | Unfinished | RTSA Suite        | OPT_BUILD_SPECTRAN_SOURCE      | ⛔              | ⛔                     | ⛔                         |
 | spectran_http_source | Unfinished | -                 | OPT_BUILD_SPECTRAN_HTTP_SOURCE | ✅              | ✅                     | ⛔                         |
 | spyserver_source     | Working    | -                 | OPT_BUILD_SPYSERVER_SOURCE     | ✅              | ✅                     | ✅                         |
 | usrp_source          | Beta       | libuhd            | OPT_BUILD_USRP_SOURCE          | ⛔              | ⛔                     | ⛔                         |
@@ -347,7 +351,7 @@ Modules in beta are still included in releases for the most part but not enabled
 
 | Name               | Stage      | Dependencies | Option                       | Built by default| Built in Release | Enabled in SDR++ by default |
 |--------------------|------------|--------------|------------------------------|:---------------:|:----------------:|:---------------------------:|
-| android_audio_sink | Working    | -            | OPT_BUILD_ANDROID_AUDIO_SINK | ⛔              | ✅              | ⛔                         |
+| android_audio_sink | Working    | -            | OPT_BUILD_ANDROID_AUDIO_SINK | ⛔              | ✅              | ✅ (Android only)          |
 | audio_sink         | Working    | rtaudio      | OPT_BUILD_AUDIO_SINK         | ✅              | ✅              | ✅                         |
 | network_sink       | Working    | -            | OPT_BUILD_NETWORK_SINK       | ✅              | ✅              | ✅                         |
 | new_portaudio_sink | Beta       | portaudio    | OPT_BUILD_NEW_PORTAUDIO_SINK | ⛔              | ✅              | ⛔                         |
@@ -373,9 +377,9 @@ Modules in beta are still included in releases for the most part but not enabled
 | discord_integration | Working    | -            | OPT_BUILD_DISCORD_PRESENCE  | ✅              | ✅               | ⛔                         |
 | frequency_manager   | Working    | -            | OPT_BUILD_FREQUENCY_MANAGER | ✅              | ✅               | ✅                         |
 | recorder            | Working    | -            | OPT_BUILD_RECORDER          | ✅              | ✅               | ✅                         |
-| rigctl_client       | Unfinished | -            | OPT_BUILD_RIGCTL_CLIENT     | ⛔              | ⛔               | ⛔                         |
+| rigctl_client       | Unfinished | -            | OPT_BUILD_RIGCTL_CLIENT     | ✅              | ✅               | ⛔                         |
 | rigctl_server       | Working    | -            | OPT_BUILD_RIGCTL_SERVER     | ✅              | ✅               | ✅                         |
-| scanner             | Beta       | -            | OPT_BUILD_SCANNER           | ✅              | ✅               | ✅                         |
+| scanner             | Beta       | -            | OPT_BUILD_SCANNER           | ✅              | ✅               | ⛔                         |
 | scheduler           | Unfinished | -            | OPT_BUILD_SCHEDULER         | ⛔              | ⛔               | ⛔                         |
 
 # Troubleshooting
@@ -406,9 +410,8 @@ To solve, this, simply downgrade to libusb1.3
 
 ## SDR++ crashes when starting a HackRF
 
-If you also have the SoapySDR module loaded (not necessarily enabled), this is a bug in libhackrf. It's caused by libhackrf not checking if it's already initialized.
-The solution until a fixed libhackrf version is released is to completely remove the soapy_source module from SDR++. To do this, delete `modules/soapy_source.dll` on windows
-or `/usr/lib/sdrpp/plugins/soapy_source.so` on linux.
+If you also have the SoapySDR module enabled, this is a bug in libhackrf. It's caused by libhackrf not checking if it's already initialized.
+The solution until a fixed libhackrf version is released is to disable the soapy_source module from SDR++. For this, go into the "Module Manager" menu and click the `-` button next to the row with "soapy_source". After that, restart SDR++.
 
 ## Issue not listed here?
 
@@ -429,25 +432,34 @@ I will soon publish a contributing.md listing the code style to use.
 * Dale L Puckett (K0HYD)
 * [Daniele D'Agnelli](https://linkedin.com/in/dagnelli)
 * D. Jones
+* Dexruus
 * [EB3FRN](https://www.eb3frn.net/)
 * Eric Johnson
 * Ernest Murphy (NH7L)
 * Flinger Films
+* [Frank Werner (HB9FXQ)](https://twitter.com/HB9FXQ)
 * gringogrigio
+* Jeff Moe
 * Joe Cupano
+* KD1SQ
 * Kezza
 * Krys Kamieniecki
 * Lee Donaghy
 * Lee KD1SQ
 * .lozenge. (Hank Hill)
+* Martin Herren (HB9FXX)
 * ON4MU
 * [Passion-Radio.com](https://passion-radio.com/)
 * Paul Maine
+* Peter Betz
 * [Scanner School](https://scannerschool.com/)
+* Scott Palmer
 * [SignalsEverywhere](https://signalseverywhere.com/)
 * Syne Ardwin (WI9SYN)
 * [W4IPA](https://twitter.com/W4IPAstroke5)
-* [Zipper](github.com/reppiZ)
+* William Arcand (W1WRA)
+* [Yves Rougy](https://www.twitch.tv/yorzian)
+* [Zipper](https://github.com/reppiZ)
 
 ## Contributors
 
@@ -479,7 +491,6 @@ I will soon publish a contributing.md listing the code style to use.
 
 * [SoapySDR (PothosWare)](https://github.com/pothosware/SoapySDR)
 * [Dear ImGui (ocornut)](https://github.com/ocornut/imgui)
-* [spdlog (gabime)](https://github.com/gabime/spdlog)
 * [json (nlohmann)](https://github.com/nlohmann/json)
 * [rtaudio](http://www.portaudio.com/)
 * [Portable File Dialogs](https://github.com/samhocevar/portable-file-dialogs)

@@ -1,5 +1,5 @@
 #pragma once
-#include "net.h"
+#include <utils/net.h>
 #include <dsp/stream.h>
 #include <dsp/types.h>
 #include <memory>
@@ -39,7 +39,7 @@ namespace hermes {
         uint8_t gatewareVerMin;
         BoardID boardId;
 
-        bool operator==(const Info& b) {
+        bool operator==(const Info& b) const {
             return !memcmp(mac, b.mac, 6);
         }
     };

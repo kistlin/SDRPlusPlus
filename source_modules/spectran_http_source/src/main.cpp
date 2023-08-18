@@ -1,5 +1,5 @@
 #include "spectran_http_client.h"
-#include <spdlog/spdlog.h>
+#include <utils/flog.h>
 #include <module.h>
 #include <gui/gui.h>
 #include <signal_path/signal_path.h>
@@ -28,7 +28,7 @@ public:
         this->name = name;
 
         strcpy(hostname, "localhost");
-        sampleRate = 5000000.0;
+        sampleRate = 5750000.0;
 
         handler.ctx = this;
         handler.selectHandler = menuSelected;
@@ -67,13 +67,13 @@ private:
     static void menuSelected(void* ctx) {
         SpectranHTTPSourceModule* _this = (SpectranHTTPSourceModule*)ctx;
         core::setInputSampleRate(_this->sampleRate);
-        spdlog::info("SpectranHTTPSourceModule '{0}': Menu Select!", _this->name);
+        flog::info("SpectranHTTPSourceModule '{0}': Menu Select!", _this->name);
     }
 
     static void menuDeselected(void* ctx) {
         SpectranHTTPSourceModule* _this = (SpectranHTTPSourceModule*)ctx;
         gui::mainWindow.playButtonLocked = false;
-        spdlog::info("SpectranHTTPSourceModule '{0}': Menu Deselect!", _this->name);
+        flog::info("SpectranHTTPSourceModule '{0}': Menu Deselect!", _this->name);
     }
 
     static void start(void* ctx) {
@@ -87,7 +87,7 @@ private:
         // TODO: Set options
 
         _this->running = true;
-        spdlog::info("SpectranHTTPSourceModule '{0}': Start!", _this->name);
+        flog::info("SpectranHTTPSourceModule '{0}': Start!", _this->name);
     }
 
     static void stop(void* ctx) {
@@ -98,34 +98,39 @@ private:
         // TODO: Implement stop
         _this->client->streaming(false);
 
-        spdlog::info("SpectranHTTPSourceModule '{0}': Stop!", _this->name);
+        flog::info("SpectranHTTPSourceModule '{0}': Stop!", _this->name);
     }
 
     static void tune(double freq, void* ctx) {
         SpectranHTTPSourceModule* _this = (SpectranHTTPSourceModule*)ctx;
-        if (_this->running) {
-            // TODO
+        bool connected = (_this->client && _this->client->isOpen());
+        if (connected) {
+            int64_t newfreq = round(freq);
+            if (newfreq != _this->lastReportedFreq && _this->gotReport) {
+                flog::debug("Sending tuning command");
+                _this->lastReportedFreq = newfreq;
+                _this->client->setCenterFrequency(newfreq);
+            }
         }
         _this->freq = freq;
-        spdlog::info("SpectranHTTPSourceModule '{0}': Tune: {1}!", _this->name, freq);
+        flog::info("SpectranHTTPSourceModule '{0}': Tune: {1}!", _this->name, freq);
     }
 
     static void menuHandler(void* ctx) {
         SpectranHTTPSourceModule* _this = (SpectranHTTPSourceModule*)ctx;
-        float menuWidth = ImGui::GetContentRegionAvail().x;
         bool connected = (_this->client && _this->client->isOpen());
         gui::mainWindow.playButtonLocked = !connected;
 
         if (connected) { SmGui::BeginDisabled(); }
 
-        if (ImGui::InputText(CONCAT("##spectran_http_host_", _this->name), _this->hostname, 1023)) {
+        if (SmGui::InputText(CONCAT("##spectran_http_host_", _this->name), _this->hostname, 1023)) {
             config.acquire();
             config.conf["hostname"] = _this->hostname;
             config.release(true);
         }
-        ImGui::SameLine();
-        ImGui::SetNextItemWidth(menuWidth - ImGui::GetCursorPosX());
-        if (ImGui::InputInt(CONCAT("##spectran_http_port_", _this->name), &_this->port, 0, 0)) {
+        SmGui::SameLine();
+        SmGui::FillWidth();
+        if (SmGui::InputInt(CONCAT("##spectran_http_port_", _this->name), &_this->port, 0, 0)) {
             config.acquire();
             config.conf["port"] = _this->port;
             config.release(true);
@@ -134,31 +139,49 @@ private:
         if (connected) { SmGui::EndDisabled(); }
 
         if (_this->running) { style::beginDisabled(); }
-        if (!connected && ImGui::Button("Connect##spectran_http_source", ImVec2(menuWidth, 0))) {
+        SmGui::FillWidth();
+        if (!connected && SmGui::Button("Connect##spectran_http_source")) {
             _this->tryConnect();
         }
-        else if (connected && ImGui::Button("Disconnect##spectran_http_source", ImVec2(menuWidth, 0))) {
+        else if (connected && SmGui::Button("Disconnect##spectran_http_source")) {
+            _this->client->onCenterFrequencyChanged.unbind(_this->onFreqChangedId);
+            _this->client->onCenterFrequencyChanged.unbind(_this->onSamplerateChangedId);
             _this->client->close();
         }
         if (_this->running) { style::endDisabled(); }
 
-        ImGui::TextUnformatted("Status:");
-        ImGui::SameLine();
+        SmGui::Text("Status:");
+        SmGui::SameLine();
         if (connected) {
-            ImGui::TextColored(ImVec4(0.0f, 1.0f, 0.0f, 1.0f), "Connected");
+            SmGui::TextColored(ImVec4(0.0f, 1.0f, 0.0f, 1.0f), "Connected");
         }
         else {
-            ImGui::TextUnformatted("Not connected");
+            SmGui::Text("Not connected");
         }
     }
 
     void tryConnect() {
         try {
+            gotReport = false;
             client = std::make_shared<SpectranHTTPClient>(hostname, port, &stream);
+            onFreqChangedId = client->onCenterFrequencyChanged.bind(&SpectranHTTPSourceModule::onFreqChanged, this);
+            onSamplerateChangedId = client->onSamplerateChanged.bind(&SpectranHTTPSourceModule::onSamplerateChanged, this);
+            client->startWorker();
         }
         catch (std::runtime_error e) {
-            spdlog::error("Could not connect: {0}", e.what());
+            flog::error("Could not connect: {0}", e.what());
         }
+    }
+
+    void onFreqChanged(double newFreq) {
+        if (lastReportedFreq == newFreq) { return; }
+        lastReportedFreq = newFreq;
+        tuner::tune(tuner::TUNER_MODE_IQ_ONLY, "", newFreq);
+        gotReport = true;
+    }
+
+    void onSamplerateChanged(double newSr) {
+        core::setInputSampleRate(newSr);
     }
 
     std::string name;
@@ -168,11 +191,16 @@ private:
     bool running = false;
 
     std::shared_ptr<SpectranHTTPClient> client;
+    HandlerID onFreqChangedId;
+    HandlerID onSamplerateChangedId;
 
     double freq;
 
+    int64_t lastReportedFreq = 0;
+    bool gotReport;
+
     char hostname[1024];
-    int port = 80;
+    int port = 54664;
     dsp::stream<dsp::complex_t> stream;
 
 };
