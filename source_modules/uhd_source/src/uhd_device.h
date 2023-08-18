@@ -9,7 +9,7 @@
 #include <uhd/types/tune_request.hpp>
 #include <uhd/usrp/multi_usrp.hpp>
 
-#include <spdlog/spdlog.h>
+#include <utils/flog.h>
 
 #include <atomic>
 #include <thread>
@@ -23,18 +23,18 @@ public:
         const uhd::device_addr_t args(device.toUhdArgs());
 
         if (!device.isValid()) {
-            spdlog::warn("tried to open invalid device with serial {0}", device.serial());
+            flog::warn("tried to open invalid device with serial {0}", device.serial());
             return;
         }
 
         usrp = uhd::usrp::multi_usrp::make(args);
         if (!usrp) {
-            spdlog::error("could not make UHD device with serial {0}", device.serial());
+            flog::error("could not make UHD device with serial {0}", device.serial());
             return;
         }
 
         const size_t rxChannelCount = getRxChannelCount();
-        spdlog::debug("device has {0} rx channels", rxChannelCount);
+        flog::debug("device has {0} rx channels", rxChannelCount);
 
         bandwidthRanges.clear();
         frequencyRanges.clear();
@@ -55,14 +55,14 @@ public:
             sampleRateRanges.insert(sampleRateRanges.begin() + channelIndex, usrp->get_rx_rates(channelIndex));
             dcOffsetRanges.insert(dcOffsetRanges.begin() + channelIndex, usrp->get_rx_dc_offset_range(channelIndex));
             antennas = usrp->get_rx_antennas(currentChannelIndex);
-            spdlog::info("bandwidth range from {0} to {1}", bandwidthRanges[channelIndex].start(), bandwidthRanges[channelIndex].stop());
-            spdlog::info("frequency range from {0} to {1}", frequencyRanges[channelIndex].start(), frequencyRanges[channelIndex].stop());
-            spdlog::info("gain range from {0} to {1}", gainRanges[channelIndex].start(), gainRanges[channelIndex].stop());
-            spdlog::info("sample rate range from {0} to {1}", sampleRateRanges[channelIndex].start(), sampleRateRanges[channelIndex].stop());
-            spdlog::info("dc offset range from {0} to {1}", dcOffsetRanges[channelIndex].start(), dcOffsetRanges[channelIndex].stop());
-            spdlog::info("available antennas {0}", antennas.size());
+            flog::info("bandwidth range from {0} to {1}", bandwidthRanges[channelIndex].start(), bandwidthRanges[channelIndex].stop());
+            flog::info("frequency range from {0} to {1}", frequencyRanges[channelIndex].start(), frequencyRanges[channelIndex].stop());
+            flog::info("gain range from {0} to {1}", gainRanges[channelIndex].start(), gainRanges[channelIndex].stop());
+            flog::info("sample rate range from {0} to {1}", sampleRateRanges[channelIndex].start(), sampleRateRanges[channelIndex].stop());
+            flog::info("dc offset range from {0} to {1}", dcOffsetRanges[channelIndex].start(), dcOffsetRanges[channelIndex].stop());
+            flog::info("available antennas {0}", antennas.size());
             for (const auto& antenna : antennas) {
-                spdlog::info("    {0}", antenna);
+                flog::info("    {0}", antenna);
             }
         }
 
@@ -70,10 +70,10 @@ public:
         const double rxFrequency = usrp->get_rx_freq(currentChannelIndex);
         const double rxBandwidth = usrp->get_rx_bandwidth(currentChannelIndex);
         const double rxGain = usrp->get_rx_gain(currentChannelIndex);
-        spdlog::info("rx rate is {0} Sps", rxRate);
-        spdlog::info("rx frequency is {0} Hz", rxFrequency);
-        spdlog::info("rx bandwidth is {0} Hz", rxBandwidth);
-        spdlog::info("rx gain is {0} dB", rxGain);
+        flog::info("rx rate is {0} Sps", rxRate);
+        flog::info("rx frequency is {0} Hz", rxFrequency);
+        flog::info("rx bandwidth is {0} Hz", rxBandwidth);
+        flog::info("rx gain is {0} dB", rxGain);
     }
 
     bool isOpen() const {
@@ -108,7 +108,7 @@ public:
                 currentChannelIndex = std::clamp<size_t>(channel_index, 0, rxChannels - 1);
             }
             else {
-                spdlog::error("channel index {0} is not between 0 and {1}", channel_index, rxChannels - 1);
+                flog::error("channel index {0} is not between 0 and {1}", channel_index, rxChannels - 1);
             }
         }
     }
@@ -117,25 +117,25 @@ public:
         if (usrp) {
             center_frequency = std::clamp(center_frequency, getRxFrequencyMin(), getRxFrequencyMax());
             const uhd::tune_request_t tuneRequest(center_frequency);
-            spdlog::debug("set rx center frequency to {0} Hz", center_frequency);
+            flog::debug("set rx center frequency to {0} Hz", center_frequency);
             uhd::tune_result_t result = usrp->set_rx_freq(tuneRequest, currentChannelIndex);
-            spdlog::debug("tune result of setCenterFrequency: {0}", result.to_pp_string());
+            flog::debug("tune result of setCenterFrequency: {0}", result.to_pp_string());
         }
     }
 
     void setRxBandwidth(double bandwidth) { // [Hz]
         if (usrp) {
             bandwidth = std::clamp(bandwidth, getRxBandwidthMin(), getRxBandwidthMax());
-            spdlog::debug("set rx bandwidth to {0} Hz", bandwidth);
+            flog::debug("set rx bandwidth to {0} Hz", bandwidth);
             usrp->set_rx_bandwidth(bandwidth, currentChannelIndex);
-            spdlog::debug("actual bandwidth is {0} Hz", usrp->get_rx_bandwidth(currentChannelIndex));
+            flog::debug("actual bandwidth is {0} Hz", usrp->get_rx_bandwidth(currentChannelIndex));
         }
     }
 
     void setRxGain(double gain) { // [dB]
         if (usrp) {
             gain = std::clamp(gain, getRxGainMin(), getRxGainMax());
-            spdlog::debug("set rx gain to {0} dB", gain);
+            flog::debug("set rx gain to {0} dB", gain);
             usrp->set_rx_gain(gain, currentChannelIndex);
         }
     }
@@ -143,7 +143,7 @@ public:
     void setRxSampleRate(double sampleRate) { // [Sps]
         if (usrp) {
             sampleRate = std::clamp(sampleRate, getRxSampleRateMin(), getRxSampleRateMax());
-            spdlog::debug("set rx sample rate to {0} Sps", sampleRate);
+            flog::debug("set rx sample rate to {0} Sps", sampleRate);
             usrp->set_rx_rate(sampleRate, currentChannelIndex);
         }
     }
@@ -151,7 +151,7 @@ public:
     void setRxAntenna(const std::string& antenna) {
         if (usrp) {
             if (std::find(antennas.begin(), antennas.end(), antenna) != antennas.end()) {
-                spdlog::debug("set rx antenna to {0}", antenna);
+                flog::debug("set rx antenna to {0}", antenna);
                 usrp->set_rx_antenna(antenna, currentChannelIndex);
             }
         }
@@ -279,7 +279,7 @@ public:
 private:
     void worker(dsp::stream<dsp::complex_t>& stream) {
         if (!usrp) {
-            spdlog::warn("tried to create worker thread on not yet opened device with serial {0}", device.serial());
+            flog::warn("tried to create worker thread on not yet opened device with serial {0}", device.serial());
             return;
         }
         // create a receive streamer
@@ -299,7 +299,7 @@ private:
         uhd::rx_metadata_t md;
         // allocate buffer to receive with samples
         const size_t maxNumberOfSamples = std::min<size_t>(STREAM_BUFFER_SIZE, rxStream->get_max_num_samps());
-        spdlog::debug("preparing buffer for up to {0} samples", maxNumberOfSamples);
+        flog::debug("preparing buffer for up to {0} samples", maxNumberOfSamples);
         std::vector<std::complex<float>> buff(maxNumberOfSamples);
         std::vector<void*> buffs;
         for (size_t ch = 0; ch < rxStream->get_num_channels(); ch++)
@@ -313,10 +313,10 @@ private:
 
             // handle the error code
             if (md.error_code == uhd::rx_metadata_t::ERROR_CODE_OVERFLOW) {
-                spdlog::warn("{0}", md.strerror());
+                flog::warn("{0}", md.strerror());
             }
             else if (md.error_code != uhd::rx_metadata_t::ERROR_CODE_NONE) {
-                spdlog::error("error while receiving data: {0}", md.strerror());
+                flog::error("error while receiving data: {0}", md.strerror());
                 receiving = false;
             }
 

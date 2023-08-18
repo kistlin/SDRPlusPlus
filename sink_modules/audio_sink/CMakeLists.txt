@@ -7,10 +7,11 @@ include(${SDRPP_MODULE_CMAKE})
 
 if (MSVC)
     # Lib path
-    target_link_directories(audio_sink PRIVATE "C:/Program Files (x86)/RtAudio/lib")
+    target_link_directories(audio_sink PRIVATE "C:/libs/rtaudio-5.1.0/install/lib")
 
     # Misc headers
-    target_include_directories(audio_sink PRIVATE "C:/Program Files (x86)/RtAudio/include/rtaudio")
+    target_include_directories(audio_sink PRIVATE "C:/libs/rtaudio-5.1.0/install/include")
+    target_include_directories(audio_sink PRIVATE "C:/libs/rtaudio-5.1.0/install/include/rtaudio")
 
     target_link_libraries(audio_sink PRIVATE rtaudio)
 else (MSVC)

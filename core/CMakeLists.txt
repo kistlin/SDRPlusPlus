@@ -81,7 +81,9 @@ if (MSVC)
     target_include_directories(sdrpp_core PUBLIC "C:/Program Files/PothosSDR/include/")
 
     # Volk
-    target_link_libraries(sdrpp_core PUBLIC volk)
+    #target_link_libraries(sdrpp_core PUBLIC volk)
+    find_package(Volk CONFIG REQUIRED)
+    target_link_libraries(sdrpp_core PUBLIC Volk::volk)
 
     # OpenGL
     find_package(OpenGL REQUIRED)
@@ -133,7 +135,7 @@ else()
         ${VOLK_INCLUDE_DIRS}
         ${LIBZSTD_INCLUDE_DIRS}
     )
-    
+
     target_link_directories(sdrpp_core PUBLIC
         ${OPENGL_LIBRARY_DIRS}
         ${FFTW3_LIBRARY_DIRS}

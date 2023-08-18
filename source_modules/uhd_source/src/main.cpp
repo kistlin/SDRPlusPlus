@@ -12,7 +12,7 @@
 #include "signal_path/source.h"
 #include "signal_path/signal_path.h"
 
-#include "spdlog/spdlog.h"
+#include <utils/flog.h>
 
 #include <string>
 #include <memory>
@@ -38,7 +38,7 @@ namespace {
     uhd::device_addr_t append_findall(const uhd::device_addr_t& device_args) {
         uhd::device_addr_t new_device_args(device_args);
         if (!new_device_args.has_key("find_all")) {
-            new_device_args["find_all"] = "1";
+            new_device_args.set("find_all", "1");
         }
 
         return new_device_args;
@@ -65,13 +65,13 @@ public:
 
         const Device& device = devices.getDeviceBySerial(lastUsedDevice);
         if (device.isValid()) {
-            spdlog::debug("device {0} is valid", device.serial());
+            flog::debug("device {0} is valid", device.serial());
             deviceIndex = devices.getDeviceIndexBySerial(device.serial());
             openUHDDevice(this);
         }
         else {
             // TODO: is executed but does not write empty string which acquire/release
-            spdlog::debug("device {0} is not valid", device.serial());
+            flog::debug("device {0} is not valid", device.serial());
             config.conf[DEVICE_FIELD] = "";
             config.save();
         }
@@ -84,21 +84,21 @@ public:
     }
 
     void postInit() {
-        spdlog::debug("UHDSourceModule::postInit");
+        flog::debug("UHDSourceModule::postInit");
     }
 
     void enable() {
-        spdlog::debug("UHDSourceModule::enable");
+        flog::debug("UHDSourceModule::enable");
         enabled = true;
     }
 
     void disable() {
-        spdlog::debug("UHDSourceModule::disable");
+        flog::debug("UHDSourceModule::disable");
         enabled = false;
     }
 
     bool isEnabled() {
-        spdlog::debug("UHDSourceModule::isEnabled");
+        flog::debug("UHDSourceModule::isEnabled");
         return enabled;
     }
 
@@ -118,7 +118,7 @@ private:
 
         ImGui::SetNextItemWidth(menuWidth);
         if (ImGui::Combo(CONCAT("##_uhd_dev_sel_", deviceName), &_this->deviceIndex, concatenatedDeviceList.c_str())) {
-            spdlog::debug("selected device index is {0}", _this->deviceIndex);
+            flog::debug("selected device index is {0}", _this->deviceIndex);
             openUHDDevice(ctx);
             config.acquire();
             config.conf[DEVICE_FIELD] = _this->devices.at(_this->deviceIndex).serial();
@@ -207,17 +207,17 @@ private:
     }
 
     static void selectHandler(void* ctx) {
-        spdlog::debug("UHDSourceModule::selectHandler");
+        flog::debug("UHDSourceModule::selectHandler");
         UHDSourceModule* _this = (UHDSourceModule*)ctx;
     }
 
     static void deselectHandler(void* ctx) {
-        spdlog::debug("UHDSourceModule::deselectHandler");
+        flog::debug("UHDSourceModule::deselectHandler");
         UHDSourceModule* _this = (UHDSourceModule*)ctx;
     }
 
     static void startHandler(void* ctx) {
-        spdlog::debug("UHDSourceModule::startHandler");
+        flog::debug("UHDSourceModule::startHandler");
         UHDSourceModule* _this = (UHDSourceModule*)ctx;
 
         if (_this->uhdDevice) {
@@ -227,17 +227,17 @@ private:
     }
 
     static void stopHandler(void* ctx) {
-        spdlog::debug("UHDSourceModule::stopHandler");
+        flog::debug("UHDSourceModule::stopHandler");
         UHDSourceModule* _this = (UHDSourceModule*)ctx;
         if (_this->uhdDevice) {
-            spdlog::debug("stop receiving data");
+            flog::debug("stop receiving data");
             _this->uhdDevice->stopReceiving();
         }
         _this->receiving = false;
     }
 
     static void tuneHandler(double freq, void* ctx) {
-        spdlog::debug("UHDSourceModule::tuneHandler: freq = {0}", freq);
+        flog::debug("UHDSourceModule::tuneHandler: freq = {0}", freq);
         UHDSourceModule* _this = (UHDSourceModule*)ctx;
         if (_this->uhdDevice) {
             _this->uhdDevice->setCenterFrequency(freq);
@@ -248,7 +248,7 @@ private:
     static void openUHDDevice(void* ctx) {
         UHDSourceModule* _this = (UHDSourceModule*)ctx;
         if (_this->devices.empty() || (_this->deviceIndex < 1)) {
-            spdlog::info("select a valid device, not doing anything");
+            flog::info("select a valid device, not doing anything");
             _this->uhdDevice = nullptr;
             return;
         }
@@ -256,7 +256,7 @@ private:
         _this->uhdDevice = std::make_unique<UHDDevice>(_this->devices.at(_this->deviceIndex));
         _this->uhdDevice->open();
         if (!_this->uhdDevice->isOpen()) {
-            spdlog::error("could not open device with serial {0}", _this->devices.at(_this->deviceIndex).serial());
+            flog::error("could not open device with serial {0}", _this->devices.at(_this->deviceIndex).serial());
             _this->uhdDevice = nullptr;
             return;
         }
@@ -289,17 +289,17 @@ private:
         _this->uhdDevice->setRxAntennaByIndex(_this->rxAntennaIndex);
         _this->uhdDevice->setRxSampleRate(sampleRates[_this->sampleRateIndex]);
         core::setInputSampleRate(_this->uhdDevice->getRxSampleRate());
-        spdlog::debug("devie opened: index = {0}, serial = {1}", _this->deviceIndex, _this->devices.at(_this->deviceIndex).serial());
+        flog::debug("devie opened: index = {0}, serial = {1}", _this->deviceIndex, _this->devices.at(_this->deviceIndex).serial());
     }
 
     void findUHDDevices() {
-        spdlog::debug("UHDSourceModule::findUHDDevices");
+        flog::debug("UHDSourceModule::findUHDDevices");
 
         devices.clear();
         const uhd::device_addr_t args("");
         uhd::device_addrs_t device_addrs = uhd::device::find(append_findall(args));
         if (device_addrs.empty()) {
-            spdlog::info("No UHD Devices Found");
+            flog::info("No UHD Devices Found");
         }
 
         for (const auto& device_addr : device_addrs) {
@@ -309,16 +309,16 @@ private:
             device.product(device_addr[Device::PRODUCT_FIELD]);
             device.serial(device_addr[Device::SERIAL_FIELD]);
             device.type(device_addr[Device::TYPE_FIELD]);
-            spdlog::debug("Device");
-            spdlog::debug("    Serial: {0}", device.serial());
-            spdlog::debug("    Product: {0}", device.product());
-            spdlog::debug("    Name: {0}", device.name());
-            spdlog::debug("    Type: {0}", device.type());
+            flog::debug("Device");
+            flog::debug("    Serial: {0}", device.serial());
+            flog::debug("    Product: {0}", device.product());
+            flog::debug("    Name: {0}", device.name());
+            flog::debug("    Type: {0}", device.type());
         }
 
         if (!devices.empty()) {
             devices.sortBySerial();
-            spdlog::info("found {0} device(s)", devices.size());
+            flog::info("found {0} device(s)", devices.size());
         }
     }
 
