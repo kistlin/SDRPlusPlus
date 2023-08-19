@@ -187,7 +187,6 @@ endif (OPT_BUILD_SPECTRAN_HTTP_SOURCE)
 if (OPT_BUILD_SPYSERVER_SOURCE)
 add_subdirectory("source_modules/spyserver_source")
 endif (OPT_BUILD_SPYSERVER_SOURCE)
-
 if (OPT_BUILD_USRP_SOURCE)
 add_subdirectory("source_modules/usrp_source")
 endif (OPT_BUILD_USRP_SOURCE)
