@@ -6,7 +6,7 @@
 #include <dsp/buffer/packer.h>
 #include <dsp/convert/stereo_to_mono.h>
 #include <utils/flog.h>
-#include <RtAudio.h>
+#include <rtaudio/RtAudio.h>
 #include <config.h>
 #include <core.h>
 
@@ -43,22 +43,18 @@ public:
         config.release(created);
 
         int count = audio.getDeviceCount();
-        RtAudio::DeviceInfo info;
-        for (int i = 0; i < count; i++) {
-            try {
-                info = audio.getDeviceInfo(i);
-                if (!info.probed) { continue; }
-                if (info.outputChannels == 0) { continue; }
-                if (info.isDefaultOutput) { defaultDevId = devList.size(); }
-                devList.push_back(info);
-                deviceIds.push_back(i);
-                txtDevList += info.name;
-                txtDevList += '\0';
-            }
-            catch (std::exception e) {
-                flog::error("AudioSinkModule Error getting audio device info: {0}", e.what());
-            }
+        std::vector<unsigned int> ids = audio.getDeviceIds();
+        RtAudio::DeviceInfo deviceInfo;
+        for (unsigned int n = 0; n < ids.size(); n++) {
+            deviceInfo = audio.getDeviceInfo(ids[n]);
+            if (deviceInfo.outputChannels == 0) { continue; }
+            if (deviceInfo.isDefaultOutput) { defaultDevId = devList.size(); }
+            devList.push_back(deviceInfo);
+            deviceIds.push_back(ids[n]);
+            txtDevList += deviceInfo.name;
+            txtDevList += '\0';
         }
+
         selectByName(device);
     }
 
@@ -166,16 +162,18 @@ private:
         opts.flags = RTAUDIO_MINIMIZE_LATENCY;
         opts.streamName = _streamName;
 
-        try {
-            audio.openStream(&parameters, NULL, RTAUDIO_FLOAT32, sampleRate, &bufferFrames, &callback, this, &opts);
-            stereoPacker.setSampleCount(bufferFrames);
-            audio.startStream();
-            stereoPacker.start();
-        }
-        catch (RtAudioError& e) {
-            flog::error("Could not open audio device");
+        auto result = audio.openStream(&parameters, NULL, RTAUDIO_FLOAT32, sampleRate, &bufferFrames, &callback, this, &opts);
+        if (result != RTAUDIO_NO_ERROR) {
+            flog::error("RtAudio::openStream failed with error code {}", static_cast<int>(result));
             return false;
         }
+        stereoPacker.setSampleCount(bufferFrames);
+        result = audio.startStream();
+        if (result != RTAUDIO_NO_ERROR) {
+            flog::error("RtAudio::startStream failed with error code {}", static_cast<int>(result));
+            return false;
+        }
+        stereoPacker.start();
 
         flog::info("RtAudio stream open");
         return true;

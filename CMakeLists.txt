@@ -69,6 +69,7 @@ set(SDRPP_CORE_ROOT "${CMAKE_SOURCE_DIR}/core/src/")
 
 # Compiler flags
 if (${CMAKE_BUILD_TYPE} MATCHES "Debug")
+    add_compile_definitions("DEBUG")
     # Debug Flags
     if (MSVC)
         set(SDRPP_COMPILER_FLAGS /std:c++17 /EHsc)
@@ -78,6 +79,7 @@ if (${CMAKE_BUILD_TYPE} MATCHES "Debug")
         set(SDRPP_COMPILER_FLAGS -g -Og -std=c++17)
     endif ()
 else()
+    add_compile_definitions("NDEBUG")
     # Normal Flags
     if (MSVC)
         set(SDRPP_COMPILER_FLAGS /O2 /Ob2 /std:c++17 /EHsc)
@@ -289,9 +291,18 @@ target_compile_options(sdrpp PRIVATE ${SDRPP_COMPILER_FLAGS})
 # Copy dynamic libs over
 if (MSVC)
     add_custom_target(do_always ALL xcopy /s \"$<TARGET_FILE_DIR:sdrpp_core>\\*.dll\" \"$<TARGET_FILE_DIR:sdrpp>\" /Y)
+    add_custom_target(do_always_debug_symbols ALL xcopy /s \"$<TARGET_FILE_DIR:sdrpp_core>/$<TARGET_FILE_BASE_NAME:sdrpp_core>.pdb\" \"$<TARGET_FILE_DIR:sdrpp>/$<TARGET_FILE_BASE_NAME:sdrpp_core>.pdb\" /Y)
     #add_custom_target(do_always_volk ALL xcopy /s \"C:/Program Files/PothosSDR/bin\\volk.dll\" \"$<TARGET_FILE_DIR:sdrpp>\" /Y)
 endif ()
+add_custom_command(TARGET sdrpp POST_BUILD
+        COMMENT "Copy $<TARGET_FILE_NAME:sdrpp_core> to $<TARGET_FILE_DIR:sdrpp>"
+        COMMAND ${CMAKE_COMMAND} -E copy "$<TARGET_FILE:sdrpp_core>" $<TARGET_FILE_DIR:sdrpp>)
 
+if (CMAKE_BUILD_TYPE STREQUAL "Debug" AND MSVC)
+    add_custom_command(TARGET sdrpp POST_BUILD
+            COMMENT "Copy $<TARGET_FILE_NAME:sdrpp_core> to $<TARGET_FILE_DIR:sdrpp>"
+            COMMAND ${CMAKE_COMMAND} -E copy "$<TARGET_FILE_DIR:sdrpp_core>/$<TARGET_FILE_BASE_NAME:sdrpp_core>.pdb" $<TARGET_FILE_DIR:sdrpp>/$<TARGET_FILE_BASE_NAME:sdrpp_core>.pdb)
+endif()
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "OpenBSD")
     add_custom_target(do_always ALL cp \"$<TARGET_FILE_DIR:sdrpp_core>/libsdrpp_core.so\" \"$<TARGET_FILE_DIR:sdrpp>\")

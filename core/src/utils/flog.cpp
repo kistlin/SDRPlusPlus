@@ -3,6 +3,8 @@
 #include <chrono>
 #include <string.h>
 #include <inttypes.h>
+#include <ctime>
+#include <sstream>
 
 #ifdef _WIN32
 #include <Windows.h>
@@ -21,6 +23,37 @@
 
 namespace flog {
     std::mutex outMtx;
+
+    /**
+     * Returns the current system time in ISO8601 format
+     * Ex.: 2023-02-01T11:54:03.743348456Z
+     */
+    std::string utcSystemTimestampISO8601();
+    bool utcSystemTimestampISO8601(char buf[]);
+
+    // https://stackoverflow.com/a/65786680/15862303
+    std::string utcSystemTimestampISO8601() {
+        char buf[31] = { 0 };
+        utcSystemTimestampISO8601(buf);
+        return std::string(buf);
+    }
+
+    bool utcSystemTimestampISO8601(char buf[]) {
+        // C++20
+        // const auto now = std::chrono::system_clock::now();
+        // std::cout << std::format("{:%FT%TZ}", now) << '\n';
+        const int dateTimeSize = 21;
+        struct timespec now {};
+#ifdef _WIN32
+        bool success = timespec_get(&now, TIME_UTC) == TIME_UTC;
+#else
+        bool success = clock_gettime(CLOCK_REALTIME, &now) == 0;
+#endif
+        struct tm* tm = std::gmtime(&now.tv_sec);
+        strftime(buf, dateTimeSize, "%Y-%m-%dT%H:%M:%S.", tm);
+        sprintf(buf + dateTimeSize - 1, "%09luZ", now.tv_nsec);
+        return success;
+    }
 
     const char* TYPE_STR[_TYPE_COUNT] = {
         "DEBUG",
@@ -150,6 +183,12 @@ namespace flog {
         {
             std::lock_guard<std::mutex> lck(outMtx);
 #if defined(_WIN32)
+#ifdef DEBUG
+            std::stringstream ss;
+            const std::string currentTimeStamp = utcSystemTimestampISO8601();
+            ss << "[" << currentTimeStamp << "] [" << TYPE_STR[type] << "] " << out.c_str() << "\n";
+            OutputDebugString(ss.str().c_str());
+#endif
             // Get output handle and return if invalid
             int wOutStream = (type == TYPE_ERROR) ? STD_ERROR_HANDLE  : STD_OUTPUT_HANDLE;
             HANDLE conHndl = GetStdHandle(wOutStream);
@@ -157,7 +196,7 @@ namespace flog {
 
             // Print beginning of log line
             SetConsoleTextAttribute(conHndl, COLOR_WHITE);
-            fprintf(outStream, "[%02d/%02d/%02d %02d:%02d:%02d.%03d] [", nowc->tm_mday, nowc->tm_mon + 1, nowc->tm_year + 1900, nowc->tm_hour, nowc->tm_min, nowc->tm_sec, 0);
+            fprintf(outStream, "[%s] [", currentTimeStamp.c_str());
 
             // Switch color to the log color, print log type and 
             SetConsoleTextAttribute(conHndl, TYPE_COLORS[type]);
