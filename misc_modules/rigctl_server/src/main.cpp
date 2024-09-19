@@ -200,8 +200,8 @@ private:
             listener = net::listen(hostname, port);
             listener->acceptAsync(clientHandler, this);
         }
-        catch (std::exception e) {
-            flog::error("Could not start rigctl server: {0}", e.what());
+        catch (const std::exception& e) {
+            flog::error("Could not start rigctl server: {}", e.what());
         }
     }
 
@@ -334,7 +334,7 @@ private:
     }
 
     std::map<int, const char*> radioModeToString = {
-        { RADIO_IFACE_MODE_NFM, "NFM" },
+        { RADIO_IFACE_MODE_NFM, "FM" },
         { RADIO_IFACE_MODE_WFM, "WFM" },
         { RADIO_IFACE_MODE_AM,  "AM"  },
         { RADIO_IFACE_MODE_DSB, "DSB" },

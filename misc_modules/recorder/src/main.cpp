@@ -249,7 +249,6 @@ private:
         }
         ImGui::Columns(1, CONCAT("EndRecorderModeColumns##_", _this->name), false);
         ImGui::EndGroup();
-        if (_this->recording) { style::endDisabled(); }
 
         // Recording path
         if (_this->folderSelect.render("##_recorder_fold_" + _this->name)) {
@@ -284,8 +283,11 @@ private:
             config.release(true);
         }
 
+        if (_this->recording) { style::endDisabled(); }
+
         // Show additional audio options
         if (_this->recMode == RECORDER_MODE_AUDIO) {
+            if (_this->recording) { style::beginDisabled(); }
             ImGui::LeftLabel("Stream");
             ImGui::FillWidth();
             if (ImGui::Combo(CONCAT("##_recorder_stream_", _this->name), &_this->streamId, _this->audioStreams.txt)) {
@@ -294,6 +296,7 @@ private:
                 config.conf[_this->name]["audioStream"] = _this->audioStreams.key(_this->streamId);
                 config.release(true);
             }
+            if (_this->recording) { style::endDisabled(); }
 
             _this->updateAudioMeter(_this->audioLvl);
             ImGui::FillWidth();
@@ -476,9 +479,9 @@ private:
         sprintf(monStr, "%02d", ltm->tm_mon + 1);
         sprintf(yearStr, "%02d", ltm->tm_year + 1900);
         if (core::modComManager.getModuleName(name) == "radio") {
-            int mode;
+            int mode = -1;
             core::modComManager.callInterface(name, RADIO_IFACE_CMD_GET_MODE, NULL, &mode);
-            modeStr = radioModeToString[mode];
+            if (mode >= 0) { modeStr = radioModeToString[mode]; };
         }
 
         // Replace in template

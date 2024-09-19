@@ -23,18 +23,18 @@ public:
         const uhd::device_addr_t args(device.toUhdArgs());
 
         if (!device.isValid()) {
-            flog::warn("tried to open invalid device with serial {0}", device.serial());
+            flog::warn("UHD: tried to open invalid device with serial {0}", device.serial());
             return;
         }
 
         usrp = uhd::usrp::multi_usrp::make(args);
         if (!usrp) {
-            flog::error("could not make UHD device with serial {0}", device.serial());
+            flog::error("UHD: could not make UHD device with serial {0}", device.serial());
             return;
         }
 
         const size_t rxChannelCount = getRxChannelCount();
-        flog::debug("device has {0} rx channels", rxChannelCount);
+        flog::debug("UHD: device has {0} rx channels", rxChannelCount);
 
         bandwidthRanges.clear();
         frequencyRanges.clear();
@@ -70,10 +70,10 @@ public:
         const double rxFrequency = usrp->get_rx_freq(currentChannelIndex);
         const double rxBandwidth = usrp->get_rx_bandwidth(currentChannelIndex);
         const double rxGain = usrp->get_rx_gain(currentChannelIndex);
-        flog::info("rx rate is {0} Sps", rxRate);
-        flog::info("rx frequency is {0} Hz", rxFrequency);
-        flog::info("rx bandwidth is {0} Hz", rxBandwidth);
-        flog::info("rx gain is {0} dB", rxGain);
+        flog::info("UHD: rx rate is {0} Sps", rxRate);
+        flog::info("UHD: rx frequency is {0} Hz", rxFrequency);
+        flog::info("UHD: rx bandwidth is {0} Hz", rxBandwidth);
+        flog::info("UHD: rx gain is {0} dB", rxGain);
     }
 
     bool isOpen() const {
@@ -108,7 +108,7 @@ public:
                 currentChannelIndex = std::clamp<size_t>(channel_index, 0, rxChannels - 1);
             }
             else {
-                flog::error("channel index {0} is not between 0 and {1}", channel_index, rxChannels - 1);
+                flog::error("UHD: channel index {0} is not between 0 and {1}", channel_index, rxChannels - 1);
             }
         }
     }
@@ -117,25 +117,25 @@ public:
         if (usrp) {
             center_frequency = std::clamp(center_frequency, getRxFrequencyMin(), getRxFrequencyMax());
             const uhd::tune_request_t tuneRequest(center_frequency);
-            flog::debug("set rx center frequency to {0} Hz", center_frequency);
+            flog::debug("UHD: set rx center frequency to {0} Hz", center_frequency);
             uhd::tune_result_t result = usrp->set_rx_freq(tuneRequest, currentChannelIndex);
-            flog::debug("tune result of setCenterFrequency: {0}", result.to_pp_string());
+            flog::debug("UHD: tune result of setCenterFrequency: {0}", result.to_pp_string());
         }
     }
 
     void setRxBandwidth(double bandwidth) { // [Hz]
         if (usrp) {
             bandwidth = std::clamp(bandwidth, getRxBandwidthMin(), getRxBandwidthMax());
-            flog::debug("set rx bandwidth to {0} Hz", bandwidth);
+            flog::debug("UHD: set rx bandwidth to {0} Hz", bandwidth);
             usrp->set_rx_bandwidth(bandwidth, currentChannelIndex);
-            flog::debug("actual bandwidth is {0} Hz", usrp->get_rx_bandwidth(currentChannelIndex));
+            flog::debug("UHD: actual bandwidth is {0} Hz", usrp->get_rx_bandwidth(currentChannelIndex));
         }
     }
 
     void setRxGain(double gain) { // [dB]
         if (usrp) {
             gain = std::clamp(gain, getRxGainMin(), getRxGainMax());
-            flog::debug("set rx gain to {0} dB", gain);
+            flog::debug("UHD: set rx gain to {0} dB", gain);
             usrp->set_rx_gain(gain, currentChannelIndex);
         }
     }
@@ -143,7 +143,7 @@ public:
     void setRxSampleRate(double sampleRate) { // [Sps]
         if (usrp) {
             sampleRate = std::clamp(sampleRate, getRxSampleRateMin(), getRxSampleRateMax());
-            flog::debug("set rx sample rate to {0} Sps", sampleRate);
+            flog::debug("UHD: set rx sample rate to {0} Sps", sampleRate);
             usrp->set_rx_rate(sampleRate, currentChannelIndex);
         }
     }
@@ -151,7 +151,7 @@ public:
     void setRxAntenna(const std::string& antenna) {
         if (usrp) {
             if (std::find(antennas.begin(), antennas.end(), antenna) != antennas.end()) {
-                flog::debug("set rx antenna to {0}", antenna);
+                flog::debug("UHD: set rx antenna to {0}", antenna);
                 usrp->set_rx_antenna(antenna, currentChannelIndex);
             }
         }
@@ -279,11 +279,11 @@ public:
 private:
     void worker(dsp::stream<dsp::complex_t>& stream) {
         if (!usrp) {
-            flog::warn("tried to create worker thread on not yet opened device with serial {0}", device.serial());
+            flog::warn("UHD: tried to create worker thread on not yet opened device with serial {0}", device.serial());
             return;
         }
         // create a receive streamer
-        uhd::stream_args_t stream_args("fc32"); // complex floats
+        uhd::stream_args_t stream_args("fc32", "sc16"); // complex floats
         stream_args.channels = std::vector<size_t>{ currentChannelIndex };
         uhd::rx_streamer::sptr rxStream = usrp->get_rx_stream(stream_args);
         if (!rxStream) {
@@ -292,6 +292,7 @@ private:
 
         // setup streaming command
         uhd::stream_cmd_t stream_cmd(uhd::stream_cmd_t::STREAM_MODE_START_CONTINUOUS);
+        stream.clearWriteStop();
         stream_cmd.stream_now = true;
         rxStream->issue_stream_cmd(stream_cmd);
 
@@ -299,35 +300,29 @@ private:
         uhd::rx_metadata_t md;
         // allocate buffer to receive with samples
         const size_t maxNumberOfSamples = std::min<size_t>(STREAM_BUFFER_SIZE, rxStream->get_max_num_samps());
-        flog::debug("preparing buffer for up to {0} samples", maxNumberOfSamples);
-        std::vector<std::complex<float>> buff(maxNumberOfSamples);
-        std::vector<void*> buffs;
-        for (size_t ch = 0; ch < rxStream->get_num_channels(); ch++)
-            buffs.push_back(&buff.front()); // same buffer for each channel
-        double receive_timeout = 1.5;
+        flog::debug("UHD: preparing buffer for up to {0} samples", maxNumberOfSamples);
+        double receiveTimeout = 1.5;
 
         while (receiving) {
-            size_t numRxSamps = rxStream->recv(buffs, buff.size(), md, receive_timeout, false);
+            size_t numRxSamps = rxStream->recv(stream.writeBuf, maxNumberOfSamples, md, receiveTimeout, false);
 
-            receive_timeout = 0.1;
+            receiveTimeout = 0.1;
 
             // handle the error code
             if (md.error_code == uhd::rx_metadata_t::ERROR_CODE_OVERFLOW) {
-                flog::warn("{0}", md.strerror());
+                flog::warn("UHD: {0}", md.strerror());
             }
             else if (md.error_code != uhd::rx_metadata_t::ERROR_CODE_NONE) {
-                flog::error("error while receiving data: {0}", md.strerror());
+                flog::error("UHD: error while receiving data: {0}", md.strerror());
                 receiving = false;
             }
 
-            for (int i = 0; i < numRxSamps; i++) {
-                stream.writeBuf[i].re = buff[i].real();
-                stream.writeBuf[i].im = buff[i].imag();
-            }
             if (!stream.swap(numRxSamps)) { break; }
         }
 
+        stream.stopWriter();
         uhd::stream_cmd_t stream_cmd_finish(uhd::stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS);
+        stream.clearWriteStop();
         rxStream->issue_stream_cmd(stream_cmd_finish);
     }
 

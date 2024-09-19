@@ -37,13 +37,20 @@ namespace sdrpp_credits {
     const char* hardwareDonators[] = {
         "Aaronia AG",
         "Airspy",
+        "Alex 4Z5LV",
         "Analog Devices",
         "CaribouLabs",
+        "Deepace",
         "Ettus Research",
+        "Harogic",
         "Howard Su",
+        "MicroPhase",
+        "Microtelecom",
         "MyriadRF",
         "Nuand",
+        "RFNM",
         "RFspace",
+        "RigExpert",
         "RTL-SDRblog",
         "SDRplay"
     };
@@ -54,6 +61,7 @@ namespace sdrpp_credits {
         "Croccydile",
         "Dale L Puckett (K0HYD)",
         "Daniele D'Agnelli",
+        "David Taylor (GM8ARV)",
         "D. Jones",
         "Dexruus",
         "EB3FRN",
@@ -81,6 +89,7 @@ namespace sdrpp_credits {
         "Syne Ardwin (WI9SYN)",
         "W4IPA",
         "William Arcand (W1WRA)",
+        "William Pitchford",
         "Yves Rougy",
         "Zipper"
     };
