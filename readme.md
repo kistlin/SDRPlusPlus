@@ -324,12 +324,13 @@ Modules in beta are still included in releases for the most part but not enabled
 | audio_source         | Working    | rtaudio           | OPT_BUILD_AUDIO_SOURCE         | ✅              | ✅                     | ✅                         |
 | bladerf_source       | Working    | libbladeRF        | OPT_BUILD_BLADERF_SOURCE       | ⛔              | ✅ (not Debian Buster) | ✅                         |
 | file_source          | Working    | -                 | OPT_BUILD_FILE_SOURCE          | ✅              | ✅                     | ✅                         |
-| fobossdr_source      | Beta       | libfobos          | OPT_BUILD_FOBOSSDR_SOURCE      | ✅              | ✅                     | ✅                         |
+| fobossdr_source      | Working    | libfobos          | OPT_BUILD_FOBOSSDR_SOURCE      | ✅              | ✅                     | ✅                         |
 | hackrf_source        | Working    | libhackrf         | OPT_BUILD_HACKRF_SOURCE        | ✅              | ✅                     | ✅                         |
 | harogic_source       | Beta       | htra_api          | OPT_BUILD_HAROGIC_SOURCE       | ⛔              | ⛔                     | ✅                         |
 | hermes_source        | Beta       | -                 | OPT_BUILD_HERMES_SOURCE        | ✅              | ✅                     | ✅                         |
+| kcsdr_source         | Unfinished | libkcsdr          | OPT_BUILD_KCSDR_SOURCE         | ⛔              | ⛔                     | ⛔                         |
 | limesdr_source       | Working    | liblimesuite      | OPT_BUILD_LIMESDR_SOURCE       | ⛔              | ✅                     | ✅                         |
-| network_source       | Unfinished | -                 | OPT_BUILD_NETWORK_SOURCE       | ✅              | ✅                     | ⛔                         |
+| network_source       | Beta       | -                 | OPT_BUILD_NETWORK_SOURCE       | ✅              | ✅                     | ✅                         |
 | perseus_source       | Beta       | libperseus-sdr    | OPT_BUILD_PERSEUS_SOURCE       | ⛔              | ✅                     | ✅                         |
 | plutosdr_source      | Working    | libiio, libad9361 | OPT_BUILD_PLUTOSDR_SOURCE      | ✅              | ✅                     | ✅                         |
 | rfnm_source          | Beta       | librfnm           | OPT_BUILD_RFNM_SOURCE          | ⛔              | ✅                     | ✅                         |
@@ -351,8 +352,8 @@ Modules in beta are still included in releases for the most part but not enabled
 | android_audio_sink | Working    | -            | OPT_BUILD_ANDROID_AUDIO_SINK | ⛔              | ✅              | ✅ (Android only)          |
 | audio_sink         | Working    | rtaudio      | OPT_BUILD_AUDIO_SINK         | ✅              | ✅              | ✅                         |
 | network_sink       | Working    | -            | OPT_BUILD_NETWORK_SINK       | ✅              | ✅              | ✅                         |
-| new_portaudio_sink | Beta       | portaudio    | OPT_BUILD_NEW_PORTAUDIO_SINK | ⛔              | ✅              | ⛔                         |
-| portaudio_sink     | Beta       | portaudio    | OPT_BUILD_PORTAUDIO_SINK     | ⛔              | ✅              | ⛔                         |
+| new_portaudio_sink | Working    | portaudio    | OPT_BUILD_NEW_PORTAUDIO_SINK | ⛔              | ✅              | ⛔                         |
+| portaudio_sink     | Working    | portaudio    | OPT_BUILD_PORTAUDIO_SINK     | ⛔              | ✅              | ⛔                         |
 
 ## Decoders
 
@@ -366,6 +367,7 @@ Modules in beta are still included in releases for the most part but not enabled
 | meteor_demodulator  | Working    | -            | OPT_BUILD_METEOR_DEMODULATOR  | ✅              | ✅              | ⛔                         |
 | pager_decoder       | Unfinished | -            | OPT_BUILD_PAGER_DECODER       | ⛔              | ⛔              | ⛔                         |
 | radio               | Working    | -            | OPT_BUILD_RADIO               | ✅              | ✅              | ✅                         |
+| radio               | Unfinished | -            | OPT_BUILD_VOR_RECEIVER        | ⛔              | ⛔              | ⛔                         |
 | weather_sat_decoder | Unfinished | -            | OPT_BUILD_WEATHER_SAT_DECODER | ⛔              | ⛔              | ⛔                         |
 
 ## Misc
@@ -418,8 +420,8 @@ If you still have an issue, please open an issue about it or ask on the discord.
 
 # Contributing
 
-Feel free to submit pull requests and report bugs via the GitHub issue tracker.
-I will soon publish a contributing.md listing the code style to use.
+Feel free to submit band plans via the GitHub issue tracker.
+For code changes, please create a feature request instead.
 
 # Credits
 
@@ -439,6 +441,7 @@ I will soon publish a contributing.md listing the code style to use.
 * Flinger Films
 * [Frank Werner (HB9FXQ)](https://twitter.com/HB9FXQ)
 * gringogrigio
+* Jandro
 * Jeff Moe
 * Joe Cupano
 * KD1SQ
