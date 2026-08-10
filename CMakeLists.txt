@@ -14,6 +14,7 @@ option(OPT_BUILD_AIRSPYHF_SOURCE "Build Airspy HF+ Source Module (Dependencies: 
 option(OPT_BUILD_AUDIO_SOURCE "Build Audio Source Module (Dependencies: rtaudio)" ON)
 option(OPT_BUILD_BADGESDR_SOURCE "Build BadgeSDR Source Module (Dependencies: libusb)" OFF)
 option(OPT_BUILD_BLADERF_SOURCE "Build BladeRF Source Module (Dependencies: libbladeRF)" OFF)
+option(OPT_BUILD_DRAGONLABS_SOURCE "Build Dragon Labs Source Module (Dependencies: libdlcr)" OFF)
 option(OPT_BUILD_FILE_SOURCE "Wav file source" ON)
 option(OPT_BUILD_FOBOSSDR_SOURCE "Build FobosSDR Source Module (Dependencies: libfobos)" OFF)
 option(OPT_BUILD_HACKRF_SOURCE "Build HackRF Source Module (Dependencies: libhackrf)" ON)
@@ -47,7 +48,7 @@ option(OPT_BUILD_PORTAUDIO_SINK "Build PortAudio Sink Module (Dependencies: port
 option(OPT_BUILD_PIPEWIRE_SINK "Build the PipeWire Sink Module (Dependencies: pipewire)" OFF)
 
 # Decoders
-option(OPT_BUILD_ATV_DECODER "Build ATV decoder (no dependencies required)" OFF)
+option(OPT_BUILD_ATV_DECODER "Build ATV decoder (no dependencies required)" ON)
 option(OPT_BUILD_DAB_DECODER "Build the DAB/DAB+ decoder (no dependencies required)" OFF)
 option(OPT_BUILD_FALCON9_DECODER "Build the falcon9 live decoder (Dependencies: ffplay)" OFF)
 option(OPT_BUILD_KG_SSTV_DECODER "Build the KG SSTV (KG-STV) decoder module (no dependencies required)" OFF)
@@ -146,6 +147,10 @@ endif (OPT_BUILD_BADGESDR_SOURCE)
 if (OPT_BUILD_BLADERF_SOURCE)
 add_subdirectory("source_modules/bladerf_source")
 endif (OPT_BUILD_BLADERF_SOURCE)
+
+if (OPT_BUILD_DRAGONLABS_SOURCE)
+add_subdirectory("source_modules/dragonlabs_source")
+endif (OPT_BUILD_DRAGONLABS_SOURCE)
 
 if (OPT_BUILD_FILE_SOURCE)
 add_subdirectory("source_modules/file_source")

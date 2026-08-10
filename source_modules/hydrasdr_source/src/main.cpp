@@ -32,9 +32,9 @@ public:
         this->name = name;
 
         // Define the ports
-        ports.define("rx0", "RX0", RF_PORT_RX0);
-        ports.define("rx1", "RX1", RF_PORT_RX1);
-        ports.define("rx2", "RX2", RF_PORT_RX2);
+        ports.define("rx0", "RX0", HYDRASDR_RF_PORT_RX0);
+        ports.define("rx1", "RX1", HYDRASDR_RF_PORT_RX1);
+        ports.define("rx2", "RX2", HYDRASDR_RF_PORT_RX2);
 
         regStr[0] = 0;
         valStr[0] = 0;
@@ -95,7 +95,7 @@ public:
 #else
         // Check for device presence
         int vid, pid;
-        devFd = backend::getDeviceFD(vid, pid, backend::AIRSPY_VIDPIDS);
+        devFd = backend::getDeviceFD(vid, pid, backend::HYDRASDR_VIDPIDS);
         if (devFd < 0) { return; }
 
         // Get device info
